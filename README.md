@@ -1,11 +1,36 @@
-# Termux Pro
+# 🚀 Termux Pro
 
-[![Build status](https://github.com/gulbalamesiyev/termux-pro/workflows/Build/badge.svg)](https://github.com/gulbalamesiyev/termux-pro/actions)
-[![Full Release](https://github.com/gulbalamesiyev/termux-pro/actions/workflows/full_release.yml/badge.svg)](https://github.com/gulbalamesiyev/termux-pro/actions)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/termux/termux-app/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="128">
+  <h3 align="center">Advanced Terminal Emulator for Android</h3>
+  <p align="center">
+    Optimized for high-performance X11 rendering and professional shell workflows.
+  </p>
+</p>
 
-**Termux Pro** is an optimized Android terminal application and Linux environment, developed by [gulbalamesiyev](https://github.com/gulbalamesiyev).
+---
 
-This version is a high-performance fork of Termux, featuring built-in X11 rendering optimizations and a customized shell experience.
+### 📥 Download Latest Version
+**Click the button below to go to the download page:**
+
+[![Download Termux Pro](https://img.shields.io/badge/Download-Termux%20Pro%20APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/gulbalamesiyev/termux-pro/releases/latest)
+
+> **Quick Install:** Open the link above, scroll to **Assets**, and download the `universal.apk` file.
+
+---
+
+### 🔥 Key Features
+- **⚡ X11 Optimized**: Built-in enhancements for smoother graphical environment (X11) performance.
+- **🎨 Professional UI**: Custom prompt `┌──(TermuxPRO)` and a clean, bug-free welcome screen.
+- **🛠️ Development Ready**: Pre-configured for developers who need more than just a standard terminal.
+- **🚀 High Performance**: V8 optimized renderer for faster terminal output and less lag.
+
+---
+
+### 👤 Developer
+Developed and optimized by **[gulbalamesiyev](https://github.com/gulbalamesiyev)**.
+
+---
 
 Note that this repository is for the app itself (the user interface and the terminal emulation). For the packages installable inside the app, see [termux/termux-packages](https://github.com/termux/termux-packages).
 
