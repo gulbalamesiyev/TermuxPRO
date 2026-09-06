@@ -398,27 +398,12 @@ final class TermuxInstaller {
     private static void updateStandardWelcomeMessage() {
         File motdFile = new File(TERMUX_PREFIX_DIR_PATH, "etc/motd");
         File motdScript = new File(TERMUX_PREFIX_DIR_PATH, "etc/motd.sh");
-        String welcomeMarker = "Developer of TermuxPRO: https://github.com/gulbalamesiyev";
 
         try {
             if (!motdScript.isFile() || !motdFile.isFile()) return;
 
-            byte[] existingBytes = new byte[(int) motdScript.length()];
-            try (FileInputStream input = new FileInputStream(motdScript)) {
-                int offset = 0;
-                int read;
-                while (offset < existingBytes.length
-                    && (read = input.read(existingBytes, offset, existingBytes.length - offset)) != -1) {
-                    offset += read;
-                }
-                if (offset != existingBytes.length) return;
-            }
-
-            String existingScript = new String(existingBytes, StandardCharsets.UTF_8);
-            if (!existingScript.contains("Welcome to Termux!")
-                || existingScript.contains(welcomeMarker)) {
-                return;
-            }
+            String existingScript = readUtf8File(motdScript);
+            if (existingScript == null) return;
 
             String message = "Welcome to TermuxPRO!\n\n"
                 + "Docs:       https://termux.dev/docs\n"
@@ -435,16 +420,34 @@ final class TermuxInstaller {
                 + "For fixing any repository issues,\n"
                 + "try 'termux-change-repo' command.\n\n"
                 + "Report issues at https://termux.dev/issues\n";
+
             String script = "#!/data/data/com.termux/files/usr/bin/bash\n\n"
                 + "cat <<'EOF'\n" + message + "EOF\n";
 
-            writeUtf8File(motdFile, message);
+            writeUtf8File(motdFile, "");
             writeUtf8File(motdScript, script);
             Os.chmod(motdScript.getAbsolutePath(), 0700);
-            Logger.logInfo(LOG_TAG, "Updated the standard Termux welcome message to TermuxPRO.");
+
+            Logger.logInfo(LOG_TAG, "Updated the standard Termux welcome message to TermuxPRO and cleared etc/motd to avoid duplication.");
         } catch (Exception e) {
             Logger.logError(LOG_TAG, "Unable to update the standard welcome message: " + e.getMessage());
         }
+    }
+
+    private static String readUtf8File(File file) throws Exception {
+        if (!file.isFile()) return null;
+
+        byte[] bytes = new byte[(int) file.length()];
+        try (FileInputStream input = new FileInputStream(file)) {
+            int offset = 0;
+            int read;
+            while (offset < bytes.length && (read = input.read(bytes, offset, bytes.length - offset)) != -1) {
+                offset += read;
+            }
+            if (offset != bytes.length) return null;
+        }
+
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private static void writeUtf8File(File file, String content) throws Exception {
