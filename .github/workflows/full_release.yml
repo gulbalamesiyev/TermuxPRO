@@ -66,6 +66,27 @@ jobs:
         with:
           files: release_assets/*
           name: Termux Pro ${{ github.ref_name }}
+          body: |
+            ## 🚀 Termux Pro ${{ github.ref_name }} is here!
+
+            Welcome to the latest release of **Termux Pro**, the ultimate terminal experience for Android.
+
+            ### ✨ Key Features in this Release:
+            - **Optimized X11 Rendering**: Smooth graphical environment support.
+            - **Customized Pro Prompt**: A new, clean `┌──(TermuxPRO)` shell prompt.
+            - **Bug Fixes**: Fixed the duplicate welcome message issue.
+            - **Clean MOTD**: A single, professional welcome screen on every session.
+
+            ### 📦 Installation
+            Download the APK suitable for your device architecture from the **Assets** section below:
+            - **Universal**: `termux-app_..._universal.apk` (Recommended)
+            - **ARM64**: `termux-app_..._arm64-v8a.apk` (For modern devices)
+
+            ### 🛠 Developer
+            Developed and optimized by **[gulbalamesiyev](https://github.com/gulbalamesiyev)**.
+
+            ---
+            *Note: These APKs are signed with a test key. If you have a previous version installed from another source, you must uninstall it first.*
           draft: false
           prerelease: false
         env:
