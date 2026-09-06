@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="navy">#1B2C40</color>
+    <color name="near_black">#090909</color>
+    <color name="muted_gray">#9A9A9A</color>
+    <color name="charcoal">#1B1B1B</color>
+    <color name="charcoal_outline">#3C3C3C</color>
+    <color name="terminal_green">#26E62C</color>
+    <color name="dark_green_fill">#063E09</color>
+    <color name="bright_green_outline">#27DD32</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

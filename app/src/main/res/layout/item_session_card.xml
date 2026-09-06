@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/charcoal"
+    app:cardCornerRadius="8dp"
+    app:strokeColor="@color/charcoal_outline"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Terminal Tile -->
+            <View
+                android:id="@+id/session_card_tile"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@color/near_black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@id/session_card_tile"
+                android:layout_alignTop="@id/session_card_tile"
+                android:layout_alignRight="@id/session_card_tile"
+                android:layout_alignBottom="@id/session_card_tile"
+                android:gravity="center"
+                android:text="@string/session_prompt"
+                android:textColor="@color/terminal_green"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Session Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/session_card_tile"
+                android:layout_marginLeft="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/session_card_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/desktop_session_default_name"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/session_card_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/session_status_running"
+                    android:textColor="@color/terminal_green"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Rename Icon -->
+            <ImageView
+                android:id="@+id/session_card_rename"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_settings"
+                android:contentDescription="@string/rename"
+                app:tint="@color/muted_gray" />
+
+        </RelativeLayout>
+
+        <!-- Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/session_card_cli"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                android:minWidth="0dp"
+                android:minHeight="48dp"
+                android:text="@string/cli"
+                android:textColor="@color/white"
+                app:strokeColor="@color/charcoal_outline"
+                app:cornerRadius="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/session_card_desktop"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                android:minWidth="0dp"
+                android:minHeight="48dp"
+                android:text="@string/desktop"
+                android:textColor="@color/terminal_green"
+                app:backgroundTint="@color/dark_green_fill"
+                app:strokeColor="@color/bright_green_outline"
+                app:strokeWidth="2dp"
+                app:cornerRadius="4dp" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/session_card_desktop_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="8dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:visibility="gone" />
+
+        <!-- Read-only CLI Preview -->
+        <FrameLayout
+            android:id="@+id/session_card_preview_container"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/near_black"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/session_card_preview_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:fontFamily="monospace"
+                android:textColor="#00FF00"
+                android:textSize="11sp"
+                android:lineSpacingMultiplier="1.2"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:clickable="false"
+                android:longClickable="false" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

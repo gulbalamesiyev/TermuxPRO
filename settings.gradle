@@ -1,0 +1,1 @@
+include ':app', ':termux-shared', ':terminal-emulator', ':terminal-view', ':lorie', ':shell-loader:stub'
