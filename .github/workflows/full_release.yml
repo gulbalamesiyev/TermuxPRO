@@ -1,0 +1,72 @@
+name: Full Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        package_variant: [ apt-android-7 ] # You can add apt-android-5 if needed
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Setup java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build APKs
+        shell: bash {0}
+        env:
+          PACKAGE_VARIANT: ${{ matrix.package_variant }}
+        run: |
+          exit_on_error() { echo "$1"; exit 1; }
+
+          RELEASE_TAG="${GITHUB_REF/refs\/tags\//}"
+          APK_VERSION_TAG="$RELEASE_TAG-${{ env.PACKAGE_VARIANT }}-release"
+          APK_BASENAME_PREFIX="termux-app_$APK_VERSION_TAG"
+
+          echo "APK_VERSION_TAG=$APK_VERSION_TAG" >> $GITHUB_ENV
+          echo "APK_BASENAME_PREFIX=$APK_BASENAME_PREFIX" >> $GITHUB_ENV
+
+          echo "Building Release APKs for $RELEASE_TAG"
+          export TERMUX_APK_VERSION_TAG="$APK_VERSION_TAG"
+          export TERMUX_PACKAGE_VARIANT="${{ env.PACKAGE_VARIANT }}"
+          ./gradlew assembleRelease
+
+          echo "Validating and preparing assets"
+          mkdir -p release_assets
+          APK_DIR_PATH="./app/build/outputs/apk/release"
+          
+          for abi in universal arm64-v8a armeabi-v7a x86_64 x86; do
+            FILE="$APK_DIR_PATH/${APK_BASENAME_PREFIX}_$abi.apk"
+            if [ -f "$FILE" ]; then
+              cp "$FILE" "release_assets/"
+            else
+              echo "Warning: $FILE not found"
+            fi
+          done
+
+          cd release_assets
+          sha256sum *.apk > "${APK_BASENAME_PREFIX}_sha256sums"
+          cd ..
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_assets/*
+          name: Termux Pro ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
