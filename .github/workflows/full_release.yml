@@ -42,7 +42,7 @@ jobs:
           echo "Building Release APKs for $RELEASE_TAG"
           export TERMUX_APK_VERSION_TAG="$APK_VERSION_TAG"
           export TERMUX_PACKAGE_VARIANT="${{ env.PACKAGE_VARIANT }}"
-          ./gradlew assembleRelease
+          bash ./gradlew assembleRelease
 
           echo "Validating and preparing assets"
           mkdir -p release_assets
