@@ -1,7 +1,7 @@
 # Termux Pro
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/termux/termux-app/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="128" alt="Termux Pro">
+  <img src="app/src/main/res/drawable-nodpi/termux_pro_icon.png" width="128" alt="Termux Pro">
 </p>
 
 <h3 align="center">A faster and more powerful Termux experience for Android</h3>
