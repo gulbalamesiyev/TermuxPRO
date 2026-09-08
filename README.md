@@ -10,31 +10,6 @@
   X11 rendering improvements, a professional shell prompt, and an optimized terminal workflow.
 </p>
 
-<p align="center">
-  <a href="https://github.com/gulbalamesiyev/termux-pro/releases/latest">
-    <img src="https://img.shields.io/badge/Download%20APK-Latest%20Release-2ea44f?style=for-the-badge&logo=android" alt="Download latest APK">
-  </a>
-  <a href="https://github.com/gulbalamesiyev/termux-pro/releases">
-    <img src="https://img.shields.io/badge/View%20All%20Releases- GitHub-181717?style=for-the-badge&logo=github" alt="View all releases">
-  </a>
-</p>
-
-## Download Termux Pro
-
-Open the latest release page and scroll to **Assets**. Choose the APK that matches your device:
-
-| File | Use |
-| --- | --- |
-| `universal.apk` | Recommended for most devices |
-| `arm64-v8a.apk` | Modern 64-bit ARM phones and tablets |
-| `armeabi-v7a.apk` | Older 32-bit ARM devices |
-| `x86_64.apk` | 64-bit x86 Android devices |
-| `x86.apk` | 32-bit x86 Android devices |
-
-**[Download the latest Termux Pro APK from Releases](https://github.com/gulbalamesiyev/termux-pro/releases/latest)**
-
-> APK files are available in the release page's **Assets** section. If Android reports a signature conflict, uninstall an older Termux build from another source before installing this build.
-
 ## Features
 
 - Optimized terminal rendering for smoother output.
