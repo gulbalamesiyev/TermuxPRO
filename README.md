@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/gulbalamesiyev/termux-pro/actions"><img src="https://github.com/gulbalamesiyev/termux-pro/workflows/Build/badge.svg" alt="Build Status"></a>
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License"></a>
   <a href="https://github.com/termux"><img src="https://img.shields.io/badge/community-Termux-orange.svg" alt="Termux Community"></a>
 </p>
 
@@ -60,7 +60,7 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 ## 📄 License
 
-This project is licensed under the **GPLv3 License** - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the **GPLv3 License** - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Resources
 
