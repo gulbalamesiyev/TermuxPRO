@@ -61,32 +61,42 @@ jobs:
           sha256sum *.apk > "${APK_BASENAME_PREFIX}_sha256sums"
           cd ..
 
+      - name: Get previous tag
+        id: get_prev_tag
+        run: |
+          git fetch --tags
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           files: release_assets/*
           name: Termux Pro ${{ github.ref_name }}
+          generate_release_notes: true
           body: |
-            ## 🚀 Termux Pro ${{ github.ref_name }} is here!
+            ## 🚀 Termux Pro ${{ github.ref_name }} - $(date -u +'%Y-%m-%d %H:%M')
 
             Welcome to the latest release of **Termux Pro**, the ultimate terminal experience for Android.
 
-            ### ✨ Key Features in this Release:
-            - **Optimized X11 Rendering**: Smooth graphical environment support.
-            - **Customized Pro Prompt**: A new, clean `┌──(TermuxPRO)` shell prompt.
-            - **Bug Fixes**: Fixed the duplicate welcome message issue.
-            - **Clean MOTD**: A single, professional welcome screen on every session.
+            ### 🔗 History
+            - **Commit History**: [${{ steps.get_prev_tag.outputs.prev_tag }}...${{ github.ref_name }}](https://github.com/${{ github.repository }}/compare/${{ steps.get_prev_tag.outputs.prev_tag }}...${{ github.ref_name }})
+
+            ### ✨ Highlights
+            - **Full Universal Build**: All architectures bundled in a single APK (~160MB).
+            - **Native Optimizations**: Improved X11 rendering and shell performance.
+            - **Professional UI**: Enhanced prompt and environment configuration.
 
             ### 📦 Installation
             Download the APK suitable for your device architecture from the **Assets** section below:
-            - **Universal**: `termux-app_..._universal.apk` (Recommended)
-            - **ARM64**: `termux-app_..._arm64-v8a.apk` (For modern devices)
+            - **Universal**: `termux-app_..._universal.apk` (Recommended - works on all devices)
+            - **Architecture Specific**: Smaller APKs if you know your device type (`arm64-v8a`, etc.)
 
             ### 🛠 Developer
             Developed and optimized by **[gulbalamesiyev](https://github.com/gulbalamesiyev)**.
 
             ---
-            *Note: These APKs are signed with a test key. If you have a previous version installed from another source, you must uninstall it first.*
+            *Note: These APKs are signed with a test key. If you have a previous version installed, you must uninstall it first.*
           draft: false
           prerelease: false
         env:
