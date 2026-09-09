@@ -36,37 +36,34 @@ jobs:
           echo "Building Release APKs for $RELEASE_TAG"
           
           chmod +x gradlew
-          ./gradlew assembleRelease
+          # Build only the app module to save time and be specific
+          ./gradlew :app:assembleRelease
 
           echo "Collecting and renaming APKs for release"
           mkdir -p release_assets
           
-          # Search for all generated APKs recursively in the app build directory
-          found_apks=false
-          find app/build/outputs/apk/ -name "*.apk" | while read -r apk; do
+          # Find all release APKs in any build directory
+          found_any=false
+          while read -r apk; do
             filename=$(basename "$apk")
-            # Skip unsigned or other internal APKs if necessary, but here we take all release ones
-            if [[ $apk == *"release"* ]]; then
-              # Professional naming: termux-pro_v1.0.5_apt-android-7_arm64-v8a.apk
+            if [[ $apk == *"release"* ]] && [[ $apk == *".apk"* ]]; then
               ABI=$(echo "$filename" | sed 's/app-//; s/-release.apk//; s/unsigned-//; s/.apk//')
               if [ -z "$ABI" ] || [ "$ABI" == "release" ]; then ABI="universal"; fi
               
               NEW_NAME="termux-pro_${RELEASE_TAG}_${{ env.PACKAGE_VARIANT }}_${ABI}.apk"
               cp "$apk" "release_assets/$NEW_NAME"
               echo "Prepared: $NEW_NAME"
-              found_apks=true
+              found_any=true
             fi
-          done
+          done < <(find . -name "*.apk")
 
-          # Create checksums only if APKs were found to avoid 0-byte file error
-          cd release_assets
-          if ls *.apk >/dev/null 2>&1; then
-            sha256sum *.apk > "sha256sums.txt"
-            echo "Checksums generated."
-          else
-            echo "Error: No release APKs found!"
+          if [ "$found_any" = false ]; then
+            echo "Error: No release APKs were found after build!"
             exit 1
           fi
+
+          cd release_assets
+          sha256sum *.apk > "sha256sums.txt"
           cd ..
 
       - name: Get previous tag
