@@ -76,11 +76,12 @@ endif()
 if("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "armeabi-v7a")
     set(PIXMAN_SRC ${PIXMAN_SRC}
             "pixman/pixman/pixman-arm-neon.c"
+            "pixman/pixman/pixman-arm-simd.c"
             "pixman/pixman/pixman-arm-neon-asm.S"
             "pixman/pixman/pixman-arm-neon-asm-bilinear.S"
             "pixman/pixman/pixman-arm-simd-asm.S"
             "pixman/pixman/pixman-arm-simd-asm-scaled.S")
-    set(PIXMAN_CFLAGS ${PIXMAN_CFLAGS} "-DUSE_ARM_SIMD=1" "-DUSE_ARM_NEON=1" "-v")
+    set(PIXMAN_CFLAGS ${PIXMAN_CFLAGS} "-DUSE_ARM_SIMD=1" "-DUSE_ARM_NEON=1")
 endif()
 
 if ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "x86" OR "${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "x86_64")
