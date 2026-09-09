@@ -32,37 +32,28 @@ jobs:
         env:
           PACKAGE_VARIANT: ${{ matrix.package_variant }}
         run: |
-          exit_on_error() { echo "$1"; exit 1; }
-
           RELEASE_TAG="${GITHUB_REF/refs\/tags\//}"
-          APK_VERSION_TAG="$RELEASE_TAG-${{ env.PACKAGE_VARIANT }}-release"
-          APK_BASENAME_PREFIX="termux-app_$APK_VERSION_TAG"
-
-          echo "APK_VERSION_TAG=$APK_VERSION_TAG" >> $GITHUB_ENV
-          echo "APK_BASENAME_PREFIX=$APK_BASENAME_PREFIX" >> $GITHUB_ENV
-
           echo "Building Release APKs for $RELEASE_TAG"
-          export TERMUX_APK_VERSION_TAG="$APK_VERSION_TAG"
-          export TERMUX_PACKAGE_VARIANT="${{ env.PACKAGE_VARIANT }}"
           
           chmod +x gradlew
           ./gradlew assembleRelease
 
-          echo "Validating and preparing assets"
+          echo "Collecting and renaming APKs for release"
           mkdir -p release_assets
-          APK_DIR_PATH="./app/build/outputs/apk/release"
           
-          for abi in universal arm64-v8a armeabi-v7a x86_64 x86; do
-            FILE="$APK_DIR_PATH/${APK_BASENAME_PREFIX}_$abi.apk"
-            if [ -f "$FILE" ]; then
-              cp "$FILE" "release_assets/"
-            else
-              echo "Warning: $FILE not found"
-            fi
+          # Find all release APKs and copy them with a professional name
+          find app/build/outputs/apk/release/ -name "*.apk" | while read -r apk; do
+            # Extract ABI from filename (e.g., app-arm64-v8a-release.apk -> arm64-v8a)
+            # Or if it's the universal one: app-universal-release.apk -> universal
+            ABI=$(basename "$apk" | sed 's/app-//; s/-release.apk//; s/unsigned-//')
+            
+            NEW_NAME="termux-pro_${RELEASE_TAG}_${{ env.PACKAGE_VARIANT }}_${ABI}.apk"
+            cp "$apk" "release_assets/$NEW_NAME"
+            echo "Prepared: $NEW_NAME"
           done
 
           cd release_assets
-          sha256sum *.apk > "${APK_BASENAME_PREFIX}_sha256sums"
+          sha256sum *.apk > "sha256sums.txt"
           cd ..
 
       - name: Get previous tag
