@@ -4,8 +4,7 @@
 
 # Built application files
 build/
-release/
-*.apk
+# release/  <-- Removed ignore to allow release artifacts
 *.so
 .externalNativeBuild
 .cxx
