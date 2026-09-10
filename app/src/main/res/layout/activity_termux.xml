@@ -84,18 +84,19 @@
                 </LinearLayout>
             </LinearLayout>
 
-        </androidx.drawerlayout.widget.DrawerLayout>
+            <FrameLayout
+                android:id="@+id/session_center_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:elevation="10dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:visibility="visible">
 
-        <FrameLayout
-            android:id="@+id/session_center_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:elevation="10dp"
-            android:visibility="visible">
-            <include layout="@layout/view_session_center" />
-        </FrameLayout>
+                <include layout="@layout/view_session_center" />
+            </FrameLayout>
+
+        </androidx.drawerlayout.widget.DrawerLayout>
 
         <androidx.viewpager.widget.ViewPager
             android:id="@+id/terminal_toolbar_view_pager"
