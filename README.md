@@ -13,10 +13,10 @@
 ## 📥 Downloads
 
 **Latest Stable Release:**
-- [**Download Termux Pro Universal APK**](release/termux-pro-universal.apk?raw=true) (~125MB)
+- [**🚀 Download Termux Pro Universal APK**](https://github.com/gulbalamesiyev/TermuxPRO/releases/download/v1.0.6/termux-pro-universal.apk) (~125MB)
   *Includes support for arm64-v8a, armeabi-v7a, x86, and x86_64.*
 
-For all versions and architecture-specific builds, visit the [**GitHub Releases**](https://github.com/gulbalamesiyev/termux-pro/releases) page.
+You can also find the APK in the [**release/**](release/) folder of this repository or on the [**Releases**](https://github.com/gulbalamesiyev/TermuxPRO/releases) page.
 
 **Termux Pro** is a highly optimized, professional-grade terminal emulator and Linux environment for Android. It extends the core Termux functionality with enhanced X11 rendering, a polished user interface, and pre-configured tools for power users.
 
