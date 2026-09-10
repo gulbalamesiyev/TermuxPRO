@@ -1,44 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-     https://material.io/develop/android/theming/dark
-    -->
+    <!-- Base Material 3 Theme -->
+    <style name="Theme.TermuxApp.DayNight.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/pro_cyan</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorContainer">@color/pro_bg_card</item>
+        <item name="android:windowBackground">@color/pro_bg_deep</item>
+        <item name="android:navigationBarColor">@color/pro_bg_deep</item>
+        <item name="android:statusBarColor">@color/pro_bg_deep</item>
+    </style>
 
-    <!-- TermuxApp DayNight DarkActionBar theme. -->
-    <style name="Theme.TermuxApp.DayNight.DarkActionBar" parent="Theme.BaseActivity.DayNight.DarkActionBar"/>
-    <!-- TermuxApp DayNight NoActionBar theme. -->
-    <style name="Theme.TermuxApp.DayNight.NoActionBar" parent="Theme.BaseActivity.DayNight.NoActionBar"/>
+    <style name="Theme.TermuxApp.DayNight.DarkActionBar" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/pro_cyan</item>
+        <item name="android:windowBackground">@color/pro_bg_deep</item>
+    </style>
 
-
-    <!-- TermuxActivity DayNight NoActionBar theme. -->
+    <!-- TermuxActivity Pro Theme -->
     <style name="Theme.TermuxActivity.DayNight.NoActionBar" parent="Theme.TermuxApp.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/black</item>
-        <item name="colorPrimaryVariant">@color/black</item>
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/pro_cyan</item>
+        <item name="colorSecondary">@color/pro_cyan_dim</item>
 
-        <item name="android:windowBackground">@color/black</item>
+        <item name="android:windowBackground">@color/pro_bg_deep</item>
 
-        <!-- Avoid action mode toolbar pushing down terminal content when
-             selecting text on pre-6.0 (non-floating toolbar). -->
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
 
-        <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:windowTranslucentNavigation">true</item>
+        <!-- Enable Edge-to-Edge -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
 
-        <!-- https://developer.android.com/training/tv/start/start.html#transition-color -->
-        <item name="android:windowAllowReturnTransitionOverlap">true</item>
-        <item name="android:windowAllowEnterTransitionOverlap">true</item>
+        <!-- Left drawer -->
+        <item name="termuxActivityDrawerBackground">@color/pro_bg_deep</item>
+        <item name="termuxActivityDrawerImageTint">@color/pro_cyan</item>
 
-        <!-- Left drawer. -->
-        <item name="buttonBarButtonStyle">@style/TermuxActivity.Drawer.ButtonBarStyle.Light</item>
-        <item name="termuxActivityDrawerBackground">@color/white</item>
-        <item name="termuxActivityDrawerImageTint">@color/black</item>
+        <!-- Extra keys colors -->
+        <item name="extraKeysButtonTextColor">@color/pro_text_primary</item>
+        <item name="extraKeysButtonActiveTextColor">@color/pro_cyan</item>
+        <item name="extraKeysButtonBackgroundColor">@color/pro_bg_card</item>
+        <item name="extraKeysButtonActiveBackgroundColor">@color/pro_bg_card_highlight</item>
 
-        <!-- Extra keys colors. -->
-        <item name="extraKeysButtonTextColor">@color/white</item>
-        <item name="extraKeysButtonActiveTextColor">@color/red_400</item>
-        <item name="extraKeysButtonBackgroundColor">@color/black</item>
-        <item name="extraKeysButtonActiveBackgroundColor">@color/grey_500</item>
+        <!-- Custom Styles -->
+        <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Filled</item>
     </style>
 
 </resources>

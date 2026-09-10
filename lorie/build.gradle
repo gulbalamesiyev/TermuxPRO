@@ -63,6 +63,7 @@ android {
 
 dependencies {
     implementation 'androidx.preference:preference:1.2.1'
+    implementation project(':termux-shared')
     compileOnly project(':shell-loader:stub')
 }
 afterEvaluate {
