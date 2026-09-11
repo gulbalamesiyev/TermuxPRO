@@ -326,6 +326,9 @@ public final class DesktopResourceManager {
                 String srcDir = PREFIX + "/src/app-store";
                 String srcFile = srcDir + "/termux-pro-app-store.c";
 
+                // Ensure build tools and sync tools are present
+                new ProcessBuilder(PREFIX + "/bin/bash", "-c", "command -v clang >/dev/null || pkg install -y clang pkg-config gtk3 curl").start().waitFor();
+
                 // Ensure directories
                 new ProcessBuilder(PREFIX + "/bin/bash", "-c", "mkdir -p " + srcDir).start().waitFor();
 

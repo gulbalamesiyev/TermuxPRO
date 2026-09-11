@@ -455,8 +455,10 @@ public final class SessionCenterController {
                             desktopButton.setText(R.string.start_desktop);
                             desktopButton.setOnClickListener(v -> {
                                 if (idleInteractionBlocked) return;
+                                // Requirement: Always try to provision/update App Store on start
+                                DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
+                                
                                 if (DesktopSessionOrchestrator.promoteAndStartInExistingSession(session)) {
-                                    DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
                                     mActivity.startDesktopBootProgress();
                                 } else if (!isRunning) {
                                     // If not running, restart it first
@@ -484,8 +486,8 @@ public final class SessionCenterController {
                             desktopButton.setOnClickListener(v -> showDownloadResourcesDialog(session));
                         } else {
                             desktopButton.setOnClickListener(v -> {
+                                DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
                                 if (DesktopSessionOrchestrator.promoteAndStartInExistingSession(session)) {
-                                    DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
                                     mActivity.startDesktopBootProgress();
                                 }
                             });
