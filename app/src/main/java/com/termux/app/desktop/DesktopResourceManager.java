@@ -144,9 +144,20 @@ public final class DesktopResourceManager {
             "  printf \"TERMUX_PRO_DESKTOP_LOG:Installing x11-repo...\\n\";\n" +
             "  pkg install -y x11-repo || exit 20;\n" +
             "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:25\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE, X11 and GTK3...\\n\";\n" +
-            "  pkg install -y xkeyboard-config dbus gvfs xfce4 xfce4-terminal thunar libxres gtk3 clang pkg-config coreutils papirus-icon-theme || exit 21;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE, X11, Python, Node.js, Git and Vim...\\n\";\n" +
+            "  pkg install -y xkeyboard-config dbus gvfs xfce4 xfce4-terminal thunar libxres gtk3 clang pkg-config coreutils papirus-icon-theme python nodejs git vim || exit 21;\n" +
             "  gtk-update-icon-cache -f \"$PREFIX/share/icons/Papirus\" 2>/dev/null;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Creating desktop shortcuts for core tools...\\n\";\n" +
+            "  for tool in node git vim; do\n" +
+            "    FILE=\"$PREFIX/share/applications/$tool-custom.desktop\";\n" +
+            "    [ ! -f \"$FILE\" ] && printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=$tool\\nExec=xfce4-terminal -e $tool\\nIcon=utilities-terminal\\nTerminal=false\\nCategories=Development;\\n\" > \"$FILE\";\n" +
+            "    cp \"$FILE\" \"$HOME/Desktop/\" 2>/dev/null;\n" +
+            "    chmod 755 \"$HOME/Desktop/$(basename \"$FILE\")\" 2>/dev/null;\n" +
+            "  done;\n" +
+            "  gio set -t string \"$HOME/Desktop/node-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/node-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
+            "  gio set -t string \"$HOME/Desktop/git-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/git-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
+            "  gio set -t string \"$HOME/Desktop/vim-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/vim-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
+            "  sync;\n" +
             "  printf \"TERMUX_PRO_DESKTOP_LOG:Compiling native App Store...\\n\";\n" +
             "  clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" $(pkg-config --cflags --libs gtk+-3.0) -lpthread || exit 22;\n" +
             "  chmod 755 \"$PREFIX/bin/termux-pro-app-store\";\n" +
@@ -225,9 +236,6 @@ public final class DesktopResourceManager {
                             DesktopNavigationState.setInstallPhase(phase);
                             changed = true;
                         }
-                    } else if (lineContent.contains("TERMUX_PRO_DESKTOP_LOG:")) {
-                        DesktopNavigationState.addInstallLog(lineContent.substring(lineContent.indexOf("LOG:") + 4));
-                        changed = true;
                     } else if (lineContent.contains("TERMUX_PRO_DESKTOP_PROGRESS:")) {
                         try {
                             int progress = Integer.parseInt(lineContent.substring(lineContent.indexOf("PROGRESS:") + 9).trim());
@@ -236,33 +244,30 @@ public final class DesktopResourceManager {
                                 changed = true;
                             }
                         } catch (NumberFormatException ignored) {}
-                    } else {
-                        if (lineContent.contains("Get:") || lineContent.contains("Ign:") || lineContent.contains("Hit:") || lineContent.contains("Reading package lists") || lineContent.contains("Fetched")) {
-                            DesktopNavigationState.setInstallPhase("DOWNLOADING");
-                            int progress = Math.max(10, Math.min(70, DesktopNavigationState.getInstallProgress() + 1));
-                            if (progress != DesktopNavigationState.getInstallProgress()) {
-                                DesktopNavigationState.setInstallProgress(progress);
-                                changed = true;
-                            }
-                        } else if (lineContent.contains("Preparing to unpack") || lineContent.contains("Unpacking") || lineContent.contains("Selecting previously unselected")) {
-                            DesktopNavigationState.setInstallPhase("INSTALLING");
-                            int progress = Math.max(60, Math.min(90, DesktopNavigationState.getInstallProgress() == -1 ? 60 : DesktopNavigationState.getInstallProgress()));
-                            if (progress != DesktopNavigationState.getInstallProgress()) {
-                                DesktopNavigationState.setInstallProgress(progress);
-                                changed = true;
-                            }
-                        } else if (lineContent.contains("Setting up") || lineContent.contains("Processing triggers") || lineContent.contains("update-alternatives")) {
-                            DesktopNavigationState.setInstallPhase("FINALIZING");
-                            int progress = Math.max(85, Math.min(99, DesktopNavigationState.getInstallProgress() == -1 ? 85 : DesktopNavigationState.getInstallProgress()));
-                            if (progress != DesktopNavigationState.getInstallProgress()) {
-                                DesktopNavigationState.setInstallProgress(progress);
-                                changed = true;
-                            }
-                        }
+                    }
 
-                        if (!lineContent.contains("TERMUX_PRO_DESKTOP_")) {
-                            DesktopNavigationState.addInstallLog(lineContent);
-                            changed = true;
+                    // Always add every line to the log for "unfiltered" experience as requested
+                    DesktopNavigationState.addInstallLog(lineContent);
+                    changed = true;
+
+                    // Still perform stage detection to update UI progress indicators
+                    if (lineContent.contains("Get:") || lineContent.contains("Ign:") || lineContent.contains("Hit:") || lineContent.contains("Reading package lists") || lineContent.contains("Fetched")) {
+                        DesktopNavigationState.setInstallPhase("DOWNLOADING");
+                        int progress = Math.max(10, Math.min(70, DesktopNavigationState.getInstallProgress() + 1));
+                        if (progress != DesktopNavigationState.getInstallProgress()) {
+                            DesktopNavigationState.setInstallProgress(progress);
+                        }
+                    } else if (lineContent.contains("Preparing to unpack") || lineContent.contains("Unpacking") || lineContent.contains("Selecting previously unselected")) {
+                        DesktopNavigationState.setInstallPhase("INSTALLING");
+                        int progress = Math.max(60, Math.min(90, DesktopNavigationState.getInstallProgress() == -1 ? 60 : DesktopNavigationState.getInstallProgress()));
+                        if (progress != DesktopNavigationState.getInstallProgress()) {
+                            DesktopNavigationState.setInstallProgress(progress);
+                        }
+                    } else if (lineContent.contains("Setting up") || lineContent.contains("Processing triggers") || lineContent.contains("update-alternatives")) {
+                        DesktopNavigationState.setInstallPhase("FINALIZING");
+                        int progress = Math.max(85, Math.min(99, DesktopNavigationState.getInstallProgress() == -1 ? 85 : DesktopNavigationState.getInstallProgress()));
+                        if (progress != DesktopNavigationState.getInstallProgress()) {
+                            DesktopNavigationState.setInstallProgress(progress);
                         }
                     }
                 }
@@ -345,10 +350,12 @@ public final class DesktopResourceManager {
                     String appsDir = PREFIX + "/share/applications";
                     String desktopFile = appsDir + "/termux-pro-app-store.desktop";
                     
+                    // Requirement 4: Fix icon issue. Use a reliable icon name or path.
+                    // We try to find a system icon first, then fallback to a generic one that definitely exists.
                     String desktopIconCmd = "mkdir -p " + appsDir + " && " +
                         "ICON_PATH=$(find \"" + PREFIX + "/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"mintinstall.png\" | head -n 1) && " +
-                        "[ -z \"$ICON_PATH\" ] && ICON_PATH=\"mintinstall\"; " +
-                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon='\"$ICON_PATH\"'\\nTerminal=false\\n' > " + desktopFile + " && " +
+                        "[ -z \"$ICON_PATH\" ] && ICON_PATH=\"system-software-install\"; " +
+                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon='\"$ICON_PATH\"'\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
                         "chmod 755 " + desktopFile + " && " +
                         "gio set -t string " + desktopFile + " metadata::xfce-exe-checksum \"$(sha256sum " + desktopFile + " | cut -d' ' -f1)\"";
                     

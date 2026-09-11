@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="@string/termux_pro"
+            android:text="@string/application_name_no_pro"
             android:textColor="@color/pro_text_primary"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -71,8 +71,6 @@
         android:visibility="visible"
         android:enabled="true"
         app:backgroundTint="@color/pro_cyan"
-        app:cornerRadius="16dp"
-        app:icon="@drawable/ic_settings"
-        app:iconTint="@color/black" />
+        app:cornerRadius="16dp" />
 
 </LinearLayout>

@@ -10,7 +10,9 @@ typedef struct {
     const char *name;
     const char *desc;
     const char *pkg;
+    const char *exec; // Executable name for checking installation and launching
     const char *category;
+    int is_gui;       // 1 for GUI apps, 0 for CLI apps
     GtkWidget *action_button;
     GtkWidget *update_button;
     GtkWidget *uninstall_button;
@@ -28,29 +30,37 @@ typedef struct {
 } AppWidgets;
 
 AppEntry catalog[] = {
-    {"firefox", "Firefox", "Web Browser", "firefox", "Recommended"},
-    {"mousepad", "Mousepad", "Text Editor", "mousepad", "Recommended"},
-    {"ristretto", "Ristretto", "Image Viewer", "ristretto", "Recommended"},
-    {"xarchiver", "Xarchiver", "Archive Manager", "xarchiver", "Recommended"},
-    {"geany", "Geany", "Lightweight IDE", "geany", "Development"},
-    {"parole", "Parole", "Media Player", "parole", "Multimedia"},
-    {"gvim", "Vim", "Advanced Editor", "vim", "Development"},
-    {"git", "Git", "Version Control", "git", "Development"},
-    {"python", "Python", "Programming Language", "python", "Development"},
-    {"nodejs", "Node.js", "JS Runtime", "nodejs", "Development"}
+    {"firefox", "Firefox", "Web Browser", "firefox", "firefox", "Recommended", 1},
+    {"tor-browser", "Tor Browser", "Anonymity & Privacy", "tor-browser", "tor-browser", "Security", 1},
+    {"mousepad", "Mousepad", "Text Editor", "mousepad", "mousepad", "Recommended", 1},
+    {"ristretto", "Ristretto", "Image Viewer", "ristretto", "ristretto", "Recommended", 1},
+    {"xarchiver", "Xarchiver", "Archive Manager", "xarchiver", "xarchiver", "Recommended", 1},
+    {"geany", "Geany", "Lightweight IDE", "geany", "geany", "Development", 1},
+    {"parole", "Parole", "Media Player", "parole", "parole", "Multimedia", 1},
+    {"vlc", "VLC Player", "Universal Media Player", "vlc", "vlc", "Multimedia", 1},
+    {"inkscape", "Inkscape", "Vector Graphics Editor", "inkscape", "inkscape", "Graphics", 1},
+    {"gimp", "GIMP", "Image Manipulation Program", "gimp", "gimp", "Graphics", 1},
+    {"libreoffice", "LibreOffice", "Full Office Suite", "libreoffice", "libreoffice", "Office", 1},
+    {"transmission-gtk", "Transmission", "BitTorrent Client", "transmission-gtk", "transmission-gtk", "Network", 1},
+    {"audacity", "Audacity", "Audio Editor", "audacity", "audacity", "Multimedia", 1},
+    {"hexchat", "HexChat", "IRC Client", "hexchat", "hexchat", "Network", 1},
+    {"wireshark-gtk", "Wireshark", "Network Analyzer", "wireshark-gtk", "wireshark-gtk", "Security", 1},
+    {"openvpn", "OpenVPN", "Secure VPN Tunneling", "openvpn", "openvpn", "Security", 0},
+    {"ollama", "Ollama", "Run AI models locally", "ollama", "ollama", "AI", 0},
+    {"claude-cli", "Claude CLI", "Anthropic's Terminal Agent", "npm install -g @anthropic-ai/claude-code", "claude", "AI", 0},
+    {"python-ai", "AI Toolkit", "Python AI libraries (PyTorch/TF)", "python", "python", "AI", 0},
+    {"htop", "Htop", "Interactive Process Viewer", "htop", "htop", "System", 0}
 };
 
-const int catalog_size = sizeof(catalog) / sizeof(AppEntry);
-
-int is_installed(const char *pkg) {
+int is_installed(AppEntry *entry) {
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "command -v %s >/dev/null 2>&1", pkg);
+    snprintf(cmd, sizeof(cmd), "command -v %s >/dev/null 2>&1", entry->exec);
     return system(cmd) == 0;
 }
 
 void refresh_status() {
     for (int i = 0; i < catalog_size; i++) {
-        if (is_installed(catalog[i].pkg)) {
+        if (is_installed(&catalog[i])) {
             gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "OPEN");
             gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Installed");
             gtk_widget_show(catalog[i].update_button);
@@ -79,7 +89,7 @@ void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
         "echo Cleaning up desktop shortcuts...; "
         "rm -f \\$HOME/Desktop/*%s*.desktop; "
         "echo Finished. Closing in 2 seconds...; sleep 2; '\"",
-        entry->name, entry->name, entry->pkg, entry->pkg);
+        entry->name, entry->name, entry->pkg, entry->exec);
     system(cmd);
     g_timeout_add(2500, delayed_refresh, NULL);
 }
@@ -98,14 +108,27 @@ void on_update_clicked(GtkWidget *widget, gpointer data) {
 
 void on_action_clicked(GtkWidget *widget, gpointer data) {
     AppEntry *entry = (AppEntry*)data;
-    if (is_installed(entry->pkg)) {
+    if (is_installed(entry)) {
         char cmd[512];
-        snprintf(cmd, sizeof(cmd), "DISPLAY=:1 nohup %s >/dev/null 2>&1 &", entry->pkg);
+        if (entry->is_gui) {
+            snprintf(cmd, sizeof(cmd), "DISPLAY=:1 nohup %s >/dev/null 2>&1 &", entry->exec);
+        } else {
+            snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal -e %s &", entry->exec);
+        }
         system(cmd);
     } else {
-        char cmd[2048];
-        // Requirement: Open CLI terminal, install, then auto-trust launcher
-        // Using --command instead of -e for better reliability in some XFCE versions
+        char cmd[4096];
+        const char *install_cmd;
+
+        // Handle special install commands like npm
+        if (strstr(entry->pkg, "npm") != NULL) {
+            install_cmd = entry->pkg;
+        } else {
+            static char pkg_buf[512];
+            snprintf(pkg_buf, sizeof(pkg_buf), "pkg install -y %s", entry->pkg);
+            install_cmd = pkg_buf;
+        }
+
         snprintf(cmd, sizeof(cmd),
             "DISPLAY=:1 xfce4-terminal --title=\"Installing %s\" --command=\"bash -c ' "
             "export PREFIX=/data/data/com.termux/files/usr; "
@@ -113,11 +136,16 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
             "echo ========================================; "
             "echo Installing %s...; "
             "echo ========================================; "
-            "pkg install -y %s; "
+            "%s; "
             "RET=\\$?; "
             "if [ \"\\$RET\" -eq 0 ]; then "
             "  echo; echo Done. Searching for desktop file...; "
             "  FILE=\\$(find \\$PREFIX/share/applications -name \"*%s*.desktop\" 2>/dev/null | head -n 1); "
+            "  if [ -z \"\\$FILE\" ] && [ \"%d\" -eq 0 ]; then "
+            "    echo No system desktop file found for CLI app. Generating one...; "
+            "    FILE=\"\\$PREFIX/share/applications/%s-custom.desktop\"; "
+            "    printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=xfce4-terminal -e %s\\nIcon=%s\\nTerminal=false\\nCategories=Development;\\n\" > \"\\$FILE\"; "
+            "  fi; "
             "  if [ -n \"\\$FILE\" ]; then "
             "    cp \"\\$FILE\" \"\\$HOME/Desktop/\"; "
             "    BN=\\$(basename \"\\$FILE\"); "
@@ -135,10 +163,9 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
             "else "
             "  echo; echo FAILED with exit code \\$RET; "
             "  echo Press ENTER to close this window; read; "
-            "fi'\"", entry->name, entry->name, entry->pkg, entry->pkg);
+            "fi'\"", entry->name, entry->name, install_cmd, entry->exec, entry->is_gui, entry->exec, entry->name, entry->exec, entry->icon);
 
         system(cmd);
-        // Refresh after a small delay to allow installation to start/finish
         g_timeout_add(3000, delayed_refresh, NULL);
     }
 }
@@ -211,7 +238,7 @@ int main(int argc, char *argv[]) {
     // Catalog View
     widgets->catalog_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     GtkWidget *header = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(header), "<span size='x-large' weight='bold'>Termux Pro App Catalog</span>");
+    gtk_label_set_markup(GTK_LABEL(header), "<span size='x-large' weight='bold'>Termux App Catalog</span>");
     gtk_box_pack_start(GTK_BOX(widgets->catalog_box), header, FALSE, FALSE, 10);
 
     GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
@@ -226,14 +253,15 @@ int main(int argc, char *argv[]) {
         GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
         gtk_container_set_border_width(GTK_CONTAINER(row), 12);
 
-        // Icon handling with fallback
         const char *icon_name = catalog[i].icon;
+        GtkWidget *icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_DIALOG);
+
+        // Requirement: Show default icons even before installation
         GtkIconTheme *icon_theme = gtk_icon_theme_get_default();
         if (!gtk_icon_theme_has_icon(icon_theme, icon_name)) {
-            icon_name = "application-x-executable"; // Standard generic icon
+            const char *fallback = catalog[i].is_gui ? "application-x-executable" : "utilities-terminal";
+            gtk_image_set_from_icon_name(GTK_IMAGE(icon), fallback, GTK_ICON_SIZE_DIALOG);
         }
-
-        GtkWidget *icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_DIALOG);
         GtkWidget *details = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
         GtkWidget *name = gtk_label_new(NULL);
         gtk_label_set_xalign(GTK_LABEL(name), 0);

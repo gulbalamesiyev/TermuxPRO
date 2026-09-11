@@ -51,32 +51,12 @@ public final class DesktopNavigationState {
             // Avoid duplicate consecutive logs
             if (!logs.isEmpty() && logs.get(logs.size() - 1).equals(log)) return;
 
-            // Requirement 3: If a new log line looks like a progress update for the same thing 
-            // as the previous line (e.g., both start with "Progress:" or "Get:"), replace instead.
-            if (!logs.isEmpty()) {
-                String lastLog = logs.get(logs.size() - 1);
-                if (isSameProgressType(lastLog, log)) {
-                    logs.set(logs.size() - 1, log);
-                    return;
-                }
-            }
-
             logs.add(log);
-            // Limit to a reasonable large history, but not truncated to 10/50.
-            if (logs.size() > 2000) logs.remove(0);
+            // Limit to a reasonable large history
+            if (logs.size() > 5000) logs.remove(0);
         }
     }
 
-    private static boolean isSameProgressType(String last, String current) {
-        // Only replace for actual progress-like updates, not for per-package steps like Get: or Unpacking:
-        String[] progressPrefixes = {"Progress:", "Processing:"};
-        for (String p : progressPrefixes) {
-            if (last.startsWith(p) && current.startsWith(p)) return true;
-        }
-        // Handle common percentage-based updates like [ 15%]
-        if (last.startsWith("[") && current.startsWith("[") && last.contains("%") && current.contains("%")) return true;
-        return false;
-    }
     public static void clearInstallLogs() { installLogs.get().clear(); }
 
     public static void enterCliForeground() {

@@ -2,7 +2,7 @@
 
 <!DOCTYPE resources [
     <!ENTITY TERMUX_PACKAGE_NAME "com.termux">
-    <!ENTITY TERMUX_APP_NAME "TermuxPRO">
+    <!ENTITY TERMUX_APP_NAME "Termux">
     <!ENTITY TERMUX_API_APP_NAME "Termux:API">
     <!ENTITY TERMUX_BOOT_APP_NAME "Termux:Boot">
     <!ENTITY TERMUX_FLOAT_APP_NAME "Termux:Float">
@@ -13,7 +13,8 @@
 
 <resources>
 
-    <string name="application_name">Termux\nPRO</string>
+    <string name="application_name">Termux</string>
+    <string name="application_name_no_pro">Termux</string>
     <string name="shared_user_label">&TERMUX_APP_NAME; user</string>
     <string name="open_session_center">Open Session Center</string>
     <string name="session_prompt">&gt; _</string>
@@ -23,13 +24,14 @@
     <string name="cli">COMMAND</string>
     <string name="desktop">DESKTOP</string>
     <string name="menu">Menu</string>
-    <string name="termux_pro">Termux PRO</string>
+    <string name="termux_pro">Termux</string>
     <string name="active_sessions">ACTIVE SESSIONS</string>
     <string name="new_session">+ NEW SESSION</string>
     <string name="starting_x11">DESKTOP</string>
-    <string name="download_resources">DOWNLOAD RESOURCES</string>
+    <string name="download_resources">DESKTOP</string>
     <string name="start_desktop">DESKTOP</string>
     <string name="single_engine">RUNNING...</string>
+    <string name="about_termux_pro">About Termux Pro</string>
 
 
 

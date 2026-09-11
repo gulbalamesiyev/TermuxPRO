@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -20,6 +21,7 @@ import com.google.android.material.button.MaterialButton;
 import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
+import com.termux.app.activities.AboutActivity;
 import com.termux.app.activities.SettingsActivity;
 import com.termux.app.desktop.DesktopRendererLauncher;
 import com.termux.app.desktop.DesktopResourceManager;
@@ -54,8 +56,21 @@ public final class SessionCenterController {
         );
 
         rootView.findViewById(R.id.session_center_menu).setOnClickListener(v -> {
-            ActivityUtils.startActivity(mActivity, new Intent(mActivity, SettingsActivity.class));
-            mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            PopupMenu popup = new PopupMenu(mActivity, v);
+            popup.getMenu().add(0, 0, 0, "Settings");
+            popup.getMenu().add(0, 1, 1, "About Termux Pro");
+            
+            popup.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == 0) {
+                    ActivityUtils.startActivity(mActivity, new Intent(mActivity, SettingsActivity.class));
+                    mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                } else if (item.getItemId() == 1) {
+                    ActivityUtils.startActivity(mActivity, new Intent(mActivity, AboutActivity.class));
+                    mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+                return true;
+            });
+            popup.show();
         });
     }
 
@@ -82,6 +97,10 @@ public final class SessionCenterController {
 
     public void setVisible(boolean visible, boolean animate) {
         View overlay = mActivity.findViewById(R.id.home_overlay);
+
+        if (visible) {
+            mActivity.hideTerminalToolbarAndKeyboard();
+        }
 
         if (!animate) {
             mRootView.setVisibility(visible ? View.VISIBLE : View.GONE);
@@ -141,6 +160,15 @@ public final class SessionCenterController {
                         .setListener(null);
             }
         }
+    }
+
+    private void showDownloadResourcesDialog(TermuxSession session) {
+        new AlertDialog.Builder(mActivity)
+                .setTitle("Desktop Resources")
+                .setMessage("Do you want to install desktop resources nearly 1.5 GB?")
+                .setPositiveButton("Yes", (dialog, which) -> triggerResourceDownload(session))
+                .setNegativeButton("No", null)
+                .show();
     }
 
     private void triggerResourceDownload(TermuxSession session) {
@@ -419,9 +447,9 @@ public final class SessionCenterController {
                         desktopButton.setEnabled(!idleInteractionBlocked);
                         desktopButton.setAlpha(idleInteractionBlocked ? 0.4f : 0.8f);
                         if (!resourcesInstalled) {
-                            desktopButton.setText(R.string.download_resources);
+                            desktopButton.setText(R.string.desktop);
                             desktopButton.setOnClickListener(v -> {
-                                if (!idleInteractionBlocked) triggerResourceDownload(session);
+                                if (!idleInteractionBlocked) showDownloadResourcesDialog(session);
                             });
                         } else {
                             desktopButton.setText(R.string.start_desktop);
@@ -451,11 +479,10 @@ public final class SessionCenterController {
                     if (owner == null && isRunning) {
                         desktopButton.setEnabled(true);
                         desktopButton.setAlpha(0.8f);
+                        desktopButton.setText(R.string.desktop);
                         if (!resourcesInstalled) {
-                            desktopButton.setText(R.string.download_resources);
-                            desktopButton.setOnClickListener(v -> triggerResourceDownload(session));
+                            desktopButton.setOnClickListener(v -> showDownloadResourcesDialog(session));
                         } else {
-                            desktopButton.setText(R.string.start_desktop);
                             desktopButton.setOnClickListener(v -> {
                                 if (DesktopSessionOrchestrator.promoteAndStartInExistingSession(session)) {
                                     DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
@@ -467,14 +494,14 @@ public final class SessionCenterController {
                     // Allow starting desktop even if session is not running (will restart/recreate)
                     desktopButton.setEnabled(true);
                     desktopButton.setAlpha(0.8f);
-                    desktopButton.setText(resourcesInstalled ? R.string.desktop : R.string.download_resources);
+                    desktopButton.setText(R.string.desktop);
                     desktopButton.setOnClickListener(v -> {
                         if (resourcesInstalled) {
                              mActivity.getTermuxService().removeTermuxSession(terminal);
                              DesktopSessionOrchestrator.start(mActivity.getTermuxService());
                              mActivity.startDesktopBootProgress();
                         } else {
-                             triggerResourceDownload(session);
+                             showDownloadResourcesDialog(session);
                         }
                     });
                 } else {

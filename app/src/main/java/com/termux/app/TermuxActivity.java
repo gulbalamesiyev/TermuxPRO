@@ -62,11 +62,13 @@ import com.termux.shared.termux.TermuxUtils;
 import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
 import com.termux.shared.termux.theme.TermuxThemeUtils;
 import com.termux.shared.theme.NightMode;
+import com.termux.shared.view.KeyboardUtils;
 import com.termux.shared.view.ViewUtils;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
+import com.termux.x11.CmdEntryPoint;
 import com.termux.x11.DesktopNavigationState;
 
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
@@ -887,6 +889,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         mLastToast.show();
     }
 
+    public void hideTerminalToolbarAndKeyboard() {
+        if (mTerminalView != null) {
+            KeyboardUtils.hideSoftKeyboard(this, mTerminalView);
+        }
+        if (findViewById(R.id.terminal_toolbar_view_pager) != null) {
+            findViewById(R.id.terminal_toolbar_view_pager).setVisibility(View.GONE);
+        }
+    }
+
 
 
     @Override
@@ -1287,7 +1298,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         requestStoragePermission(false);
                         return;
                     case "com.termux.x11.CmdEntryPoint.ACTION_START":
-                        String launchToken = intent.getStringExtra(com.termux.x11.CmdEntryPoint.EXTRA_DESKTOP_OWNER_HANDLE);
+                        String launchToken = intent.getStringExtra(CmdEntryPoint.EXTRA_DESKTOP_OWNER_HANDLE);
                         if (!DesktopNavigationState.isLaunchTokenValid(launchToken)) {
                             Logger.logInfo(LOG_TAG, "Ignoring stale desktop bridge signal for launch token " + launchToken);
                             return;
@@ -1295,8 +1306,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         Logger.logInfo(LOG_TAG, "Desktop bridge ready signal received");
                         
                         // Extract and cache connection bundle so MainActivity can use it immediately if opened via UI.
-                        final Bundle connectionBundle = intent.getBundleExtra(com.termux.x11.CmdEntryPoint.EXTRA_CONNECTION_BUNDLE) != null
-                            ? intent.getBundleExtra(com.termux.x11.CmdEntryPoint.EXTRA_CONNECTION_BUNDLE)
+                        final Bundle connectionBundle = intent.getBundleExtra(CmdEntryPoint.EXTRA_CONNECTION_BUNDLE) != null
+                            ? intent.getBundleExtra(CmdEntryPoint.EXTRA_CONNECTION_BUNDLE)
                             : intent.getBundleExtra(null);
 
                         // Authority over READY state belongs to the renderer. 
