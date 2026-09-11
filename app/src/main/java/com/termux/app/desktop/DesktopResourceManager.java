@@ -326,11 +326,11 @@ public final class DesktopResourceManager {
                 String srcDir = PREFIX + "/src/app-store";
                 String srcFile = srcDir + "/termux-pro-app-store.c";
 
-                // Ensure build tools and sync tools are present
-                new ProcessBuilder(PREFIX + "/bin/bash", "-c", "command -v clang >/dev/null || pkg install -y clang pkg-config gtk3 curl").start().waitFor();
+                // Ensure build tools, sync tools and certificates are present
+                new ProcessBuilder(PREFIX + "/bin/bash", "-c", "pkg install -y clang pkg-config gtk3 curl ca-certificates").start().waitFor();
 
                 // Ensure directories
-                new ProcessBuilder(PREFIX + "/bin/bash", "-c", "mkdir -p " + srcDir).start().waitFor();
+                new ProcessBuilder(PREFIX + "/bin/bash", "-c", "mkdir -p " + srcDir + " && mkdir -p " + PREFIX + "/var/lib/termux-pro").start().waitFor();
 
                 // Copy asset to Termux environment
                 InputStream is = context.getAssets().open("termux-pro-app-store.c");
@@ -353,14 +353,18 @@ public final class DesktopResourceManager {
                     String appsDir = PREFIX + "/share/applications";
                     String desktopFile = appsDir + "/termux-pro-app-store.desktop";
                     
-                    // Requirement 4: Fix icon issue. Use a reliable icon name or path.
-                    // We try to find a system icon first, then fallback to a generic one that definitely exists.
+                    // Requirement: Use a highly professional Blue App Store icon (Papirus Software Center)
                     String desktopIconCmd = "mkdir -p " + appsDir + " && " +
-                        "ICON_PATH=$(find \"" + PREFIX + "/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"mintinstall.png\" | head -n 1) && " +
-                        "[ -z \"$ICON_PATH\" ] && ICON_PATH=\"system-software-install\"; " +
-                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon='\"$ICON_PATH\"'\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
+                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon=org.gnome.Software\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
                         "chmod 755 " + desktopFile + " && " +
-                        "gio set -t string " + desktopFile + " metadata::xfce-exe-checksum \"$(sha256sum " + desktopFile + " | cut -d' ' -f1)\"";
+                        "rm -f $HOME/Desktop/termux-pro-app-store.desktop && " +
+                        "cp " + desktopFile + " $HOME/Desktop/ 2>/dev/null && " +
+                        "chmod 755 $HOME/Desktop/termux-pro-app-store.desktop 2>/dev/null && " +
+                        "if command -v gio >/dev/null; then " +
+                        "  gio set -t string $HOME/Desktop/termux-pro-app-store.desktop metadata::xfce-exe-checksum \"$(sha256sum $HOME/Desktop/termux-pro-app-store.desktop | cut -d' ' -f1)\" 2>/dev/null; " +
+                        "fi; " +
+                        "touch $HOME/Desktop/termux-pro-app-store.desktop && " +
+                        "sync";
                     
                     new ProcessBuilder(PREFIX + "/bin/bash", "-c", desktopIconCmd).start().waitFor();
                     new ProcessBuilder(PREFIX + "/bin/bash", "-c", "sync").start().waitFor();
