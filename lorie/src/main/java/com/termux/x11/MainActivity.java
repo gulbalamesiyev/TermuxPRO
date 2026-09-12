@@ -247,8 +247,11 @@ public class MainActivity extends AppCompatActivity {
             if (tokenToUse != null) {
                 intent.putExtra(CmdEntryPoint.EXTRA_DESKTOP_OWNER_HANDLE, tokenToUse);
             }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+            // Do NOT set FLAG_ACTIVITY_NEW_TASK here: on this device the host runtime reports
+            // MULTI_WINDOW_ENABLED=false, so spawning a brand-new renderer window never surfaces.
+            // Instead send the intent to the existing renderer task (in-place) and bring it to front,
+            // which works whether the renderer is already alive or being created for the first time.
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
                 | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             
