@@ -15,6 +15,7 @@ typedef struct {
     int is_gui;
     GtkWidget *row_widget;
     GtkWidget *action_button;
+    GtkWidget *uninstall_button;
     GtkWidget *status_label;
 } AppEntry;
 
@@ -45,47 +46,69 @@ void refresh_ui() {
     if (!catalog) return;
     for (int i = 0; i < catalog_size; i++) {
         if (is_installed(catalog[i].exec)) {
-            gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "OPEN");
+            gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "UPDATE");
+            gtk_widget_show(catalog[i].uninstall_button);
             gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Installed");
         } else {
             gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "INSTALL");
+            gtk_widget_hide(catalog[i].uninstall_button);
             gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Available");
         }
     }
 }
 
-void on_action_clicked(GtkWidget *widget, gpointer data) {
+void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
     AppEntry *entry = (AppEntry*)data;
     char cmd[4096];
-    if (is_installed(entry->exec)) {
-        if (entry->is_gui) snprintf(cmd, sizeof(cmd), "DISPLAY=:1 nohup %s >/dev/null 2>&1 &", entry->exec);
-        else snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal -e %s &", entry->exec);
-        system(cmd);
-    } else {
-        snprintf(cmd, sizeof(cmd),
-            "DISPLAY=:1 xfce4-terminal --title=\"Installing %s\" --command=\"bash -c ' "
-            "echo Installing %s...; "
-            "if echo \\\"%s\\\" | grep -q \\\"npm\\\"; then %s; else pkg install -y %s; fi; "
-            "RET=\\$?; "
-            "if [ \\$RET -eq 0 ]; then "
-            "  echo Creating Shortcut...; "
-            "  FILE=\\$HOME/Desktop/%s.desktop; "
-            "  EXEC_PATH=\\\"%s\\\"; "
-            "  if ! echo \\\"\\$EXEC_PATH\\\" | grep -q \\\"/\\\"; then EXEC_PATH=\\$(command -v %s); fi; "
-            "  [ -z \\\"\\$EXEC_PATH\\\" ] && EXEC_PATH=%s; "
-            "  ICON_NAME=%s; "
-            "  [ \\\"%d\\\" -eq 0 ] && EXEC_CMD=\\\"xfce4-terminal -e \\$EXEC_PATH\\\" || EXEC_CMD=\\\"\\$EXEC_PATH\\\"; "
-            "  printf \\\"[Desktop Entry]\\\\nVersion=1.0\\\\nType=Application\\\\nName=%s\\\\nExec=\\$EXEC_CMD\\\\nIcon=\\$ICON_NAME\\\\nTerminal=false\\\\nCategories=%s;\\\\n\\\" > \\\"\\$FILE\\\"; "
-            "  chmod 755 \\\"\\$FILE\\\"; "
-            "  if command -v gio >/dev/null; then gio set -t string \\\"\\$FILE\\\" metadata::xfce-exe-checksum \\\"\\$(sha256sum \\\"\\$FILE\\\" | cut -d \\' \\' -f 1)\\\" 2>/dev/null; fi; "
-            "  echo Done. Shortcut created.; sleep 2; "
-            "else echo FAILED; read; fi'\"",
-            entry->name, entry->name, entry->pkg, entry->pkg, entry->pkg,
-            entry->name, entry->exec, entry->exec, entry->exec,
-            entry->is_gui, entry->name, entry->icon, entry->category);
-        system(cmd);
-        g_timeout_add(5000, (GSourceFunc)refresh_ui, NULL);
-    }
+    snprintf(cmd, sizeof(cmd),
+        "DISPLAY=:1 xfce4-terminal --title \"Uninstalling %s\" -x bash -c ' "
+        "echo \"Uninstalling %s...\"; "
+        "if echo \"%s\" | grep -q \"npm\"; then "
+        "  cmd=\"%s\"; uninstall_cmd=${cmd/install/uninstall}; eval $uninstall_cmd; "
+        "else pkg uninstall -y %s; fi; "
+        "rm -f \"$HOME/Desktop/%s.desktop\"; "
+        "xfdesktop --reload 2>/dev/null; "
+        "echo \"Done.\"; sleep 2' &",
+        entry->name, entry->name, entry->pkg, entry->pkg, entry->pkg, entry->name);
+    system(cmd);
+    g_timeout_add(2000, (GSourceFunc)refresh_ui, NULL);
+}
+
+void on_action_clicked(GtkWidget *widget, gpointer data) {
+    AppEntry *entry = (AppEntry*)data;
+    char cmd[8192];
+
+    snprintf(cmd, sizeof(cmd),
+        "DISPLAY=:1 xfce4-terminal --title \"Installing %s\" -x bash -c ' "
+        "echo \"Installing %s...\"; "
+        "if echo \"%s\" | grep -q \" \"; then %s; else pkg install -y %s; fi; "
+        "RET=$?; "
+        "if [ $RET -eq 0 ]; then "
+        "  echo \"Creating Shortcut...\"; "
+        "  FILE=\"$HOME/Desktop/%s.desktop\"; "
+        "  EXEC_PATH=\"%s\"; "
+        "  if ! echo \"$EXEC_PATH\" | grep -q \"/\"; then EXEC_PATH=$(command -v %s); fi; "
+        "  [ -z \"$EXEC_PATH\" ] && EXEC_PATH=%s; "
+        "  ICON_NAME=\"%s\"; ICON_NAME=${ICON_NAME%%%%.*}; "
+        "  FOUND_ICON=$(find \"$PREFIX/share/icons\" \"$HOME/.local/share/icons\" \"$PREFIX/share/pixmaps\" -maxdepth 3 ! -name \"*.desktop\" -iname \"$ICON_NAME.*\" 2>/dev/null | head -n 1); "
+        "  if [ -z \"$FOUND_ICON\" ]; then "
+        "    case \"%s\" in Internet) M=web-browser;; Security) M=security-high;; Multimedia) M=multimedia-audio-player;; Development) M=edit-code;; Graphics) M=applications-graphics;; Office) M=x-office-document;; System) M=system-run;; AI) M=utilities-terminal;; *) M=application-x-executable;; esac; "
+        "    SRC=$(find \"$PREFIX/share/icons/Papirus\" \"$PREFIX/share/icons/hicolor\" ! -name \"*.desktop\" -name \"$M.*\" 2>/dev/null | head -n 1); "
+        "    if [ -n \"$SRC\" ]; then ICON_DIR=\"$HOME/.local/share/icons/hicolor/48x48/apps\"; mkdir -p \"$ICON_DIR\"; cp \"$SRC\" \"$ICON_DIR/$ICON_NAME.svg\" 2>/dev/null; ICON_NAME=\"$ICON_DIR/$ICON_NAME.svg\"; fi; "
+        "  fi; "
+        "  if [ \"%d\" -eq 0 ]; then EXEC_CMD=\"xfce4-terminal --hold -e $EXEC_PATH\"; else EXEC_CMD=\"$EXEC_PATH\"; fi; "
+        "  printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=$ICON_NAME\\nTerminal=false\\nCategories=%s;\\n\" > \"$FILE\"; "
+        "  chmod 755 \"$FILE\"; sync; "
+        "  if command -v gio >/dev/null; then gio set -t string \"$FILE\" metadata::xfce-exe-checksum \"$(sha256sum \"$FILE\" | cut -d\" \" -f1)\" 2>/dev/null; gio set \"$FILE\" metadata::trusted true 2>/dev/null; fi; "
+        "  gtk-update-icon-cache -f /data/data/com.termux/files/usr/share/icons/hicolor 2>/dev/null; "
+        "  xfdesktop --reload 2>/dev/null; "
+        "  echo \"Done.\"; sleep 2; "
+        "else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi' &",
+        entry->name, entry->name, entry->pkg, entry->pkg, entry->pkg,
+        entry->name, entry->exec, entry->exec, entry->exec,
+        entry->icon, entry->category, entry->is_gui, entry->name, entry->category);
+    system(cmd);
+    g_timeout_add(5000, (GSourceFunc)refresh_ui, NULL);
 }
 
 void on_search_changed(GtkEditable *editable, gpointer user_data) {
@@ -101,14 +124,48 @@ void on_search_changed(GtkEditable *editable, gpointer user_data) {
 
 void populate_list() {
     for (int j = 0; j < catalog_size; j++) {
+        // Skip core system tools to prevent accidental breakage and redundancy
+        if (strcasestr(catalog[j].pkg, "python") ||
+            strcasestr(catalog[j].pkg, "node") ||
+            strcasestr(catalog[j].pkg, "git") ||
+            strcasestr(catalog[j].pkg, "vim") ||
+            strcasestr(catalog[j].pkg, "clang") ||
+            strcasestr(catalog[j].pkg, "pkg-config")) {
+            continue;
+        }
+
         GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
         catalog[j].row_widget = row;
         gtk_container_set_border_width(GTK_CONTAINER(row), 12);
 
-        GtkWidget *icon = gtk_image_new_from_icon_name(catalog[j].icon, GTK_ICON_SIZE_DIALOG);
+        // Advanced Icon Resolution
+        char icon_name[128];
+        strncpy(icon_name, catalog[j].icon, 127);
+        icon_name[127] = '\0';
+
+        // Strip extension if present (e.g. "chrome.png" -> "chrome")
+        char *dot = strrchr(icon_name, '.');
+        if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) {
+            *dot = '\0';
+        }
+
         GtkIconTheme *theme = gtk_icon_theme_get_default();
-        if (!gtk_icon_theme_has_icon(theme, catalog[j].icon))
-            gtk_image_set_from_icon_name(GTK_IMAGE(icon), catalog[j].is_gui ? "application-x-executable" : "utilities-terminal", GTK_ICON_SIZE_DIALOG);
+        GtkWidget *icon = NULL;
+
+        // Try multiple candidates for native icons: listed name, exec name, or package name
+        const char *candidates[] = { icon_name, catalog[j].exec, catalog[j].pkg, NULL };
+        for (int k = 0; candidates[k] != NULL; k++) {
+            if (strlen(candidates[k]) > 0 && gtk_icon_theme_has_icon(theme, candidates[k])) {
+                icon = gtk_image_new_from_icon_name(candidates[k], GTK_ICON_SIZE_DIALOG);
+                break;
+            }
+        }
+
+        if (!icon) {
+            icon = gtk_image_new_from_icon_name(catalog[j].is_gui ? "application-x-executable" : "utilities-terminal", GTK_ICON_SIZE_DIALOG);
+        }
+
+        gtk_image_set_pixel_size(GTK_IMAGE(icon), 48);
 
         GtkWidget *details = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
         GtkWidget *name = gtk_label_new(NULL);
@@ -124,10 +181,16 @@ void populate_list() {
         gtk_widget_set_size_request(catalog[j].action_button, 100, -1);
         g_signal_connect(catalog[j].action_button, "clicked", G_CALLBACK(on_action_clicked), &catalog[j]);
 
+        catalog[j].uninstall_button = gtk_button_new_with_label("UNINSTALL");
+        gtk_widget_set_size_request(catalog[j].uninstall_button, 100, -1);
+        g_signal_connect(catalog[j].uninstall_button, "clicked", G_CALLBACK(on_uninstall_clicked), &catalog[j]);
+        gtk_widget_hide(catalog[j].uninstall_button);
+
         gtk_box_pack_start(GTK_BOX(row), icon, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(row), details, TRUE, TRUE, 0);
         gtk_box_pack_start(GTK_BOX(row), catalog[j].status_label, FALSE, FALSE, 10);
-        gtk_box_pack_start(GTK_BOX(row), catalog[j].action_button, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(row), catalog[j].action_button, FALSE, FALSE, 5);
+        gtk_box_pack_start(GTK_BOX(row), catalog[j].uninstall_button, FALSE, FALSE, 0);
 
         gtk_list_box_insert(GTK_LIST_BOX(widgets.list_box), row, -1);
     }
@@ -194,9 +257,20 @@ static void* load_catalog_thread(void* data) {
 
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
+
+    // Force GTK to use the Papirus icon theme
+    GtkSettings *settings = gtk_settings_get_default();
+    g_object_set(settings, "gtk-icon-theme-name", "Papirus", NULL);
+
+    // Ensure GTK looks in the correct icon directories
+    GtkIconTheme *theme = gtk_icon_theme_get_default();
+    gtk_icon_theme_append_search_path(theme, "/data/data/com.termux/files/usr/share/icons");
+    gtk_icon_theme_append_search_path(theme, "/data/data/com.termux/files/usr/share/icons/Papirus");
+    gtk_icon_theme_append_search_path(theme, "/data/data/com.termux/files/usr/share/pixmaps");
+
     widgets.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(widgets.window), "Termux App Store");
-    gtk_window_set_icon_from_file(GTK_WINDOW(widgets.window), "/data/data/com.termux/files/usr/share/icons/termux-pro-store.png", NULL);
+    gtk_window_set_icon_name(GTK_WINDOW(widgets.window), "software-center");
     gtk_window_set_default_size(GTK_WINDOW(widgets.window), 800, 550);
     gtk_window_set_position(GTK_WINDOW(widgets.window), GTK_WIN_POS_CENTER);
     g_signal_connect(widgets.window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
