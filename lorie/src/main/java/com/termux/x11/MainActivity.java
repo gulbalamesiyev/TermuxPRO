@@ -218,8 +218,12 @@ public class MainActivity extends AppCompatActivity {
         sPendingLaunchRunnable = () -> {
             sPendingLaunchRunnable = null;
 
-            // Authority check: ONLY foreground if the bridge/binder is genuinely READY
-            if (DesktopNavigationState.getDesktopBootState() != DesktopNavigationState.DesktopBootState.READY) {
+            // A live renderer instance means the bridge already delivered a surface to this
+            // task before, so we can foreground it regardless of the (possibly regressed) boot
+            // state. Otherwise wait for the bridge to be genuinely READY before starting.
+            boolean hasLiveRenderer = instance != null;
+            if (!hasLiveRenderer
+                && DesktopNavigationState.getDesktopBootState() != DesktopNavigationState.DesktopBootState.READY) {
                 Log.i("MainActivity", "Bridge is not ready yet; retrying renderer foregrounding in 250ms");
                 DesktopNavigationState.setDesktopLaunchPending(true);
                 sPendingLaunchRunnable = thisRunnable();
@@ -228,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             DesktopNavigationState.setDesktopLaunchPending(false);
-            Log.i("MainActivity", "Settling window complete and bridge is READY; foregrounding renderer");
+            Log.i("MainActivity", "Settling window complete; foregrounding renderer (live=" + hasLiveRenderer + ")");
             Intent intent = new Intent(ACTION_START);
             intent.setClass(context, MainActivity.class);
             
