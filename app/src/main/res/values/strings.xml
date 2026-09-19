@@ -21,7 +21,7 @@
     <string name="desktop_session_default_name">Desktop Session 1</string>
     <string name="session_status_running">RUNNING</string>
     <string name="rename">Rename</string>
-    <string name="cli">COMMAND</string>
+    <string name="cli">TERMINAL</string>
     <string name="desktop">DESKTOP</string>
     <string name="menu">Menu</string>
     <string name="termux_pro">Termux</string>
