@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.termux.shared.termux.TermuxConstants;
+import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.terminal.TerminalSession;
 import com.termux.x11.DesktopNavigationState;
@@ -42,6 +43,16 @@ public final class DesktopResourceManager {
     private static final Handler sHandler = new Handler(Looper.getMainLooper());
     private static long sLogFileOffset = 0;
     private static String sPendingOutput = "";
+    private static final Runnable sProgressTicker = new Runnable() {
+        @Override
+        public void run() {
+            DesktopNavigationState.tickVisualProgress();
+            if (sCallback != null) sCallback.onProgressUpdated();
+            if (DesktopNavigationState.getDesktopBootState() == DesktopNavigationState.DesktopBootState.DOWNLOADING) {
+                sHandler.postDelayed(this, 150);
+            }
+        }
+    };
 
     private static final Runnable sFallbackRunnable = () -> {
         if (DesktopNavigationState.getDesktopBootState() == DesktopNavigationState.DesktopBootState.DOWNLOADING) {
@@ -54,6 +65,7 @@ public final class DesktopResourceManager {
                 }
             }
             if (onlySyntheticLog) {
+                DesktopNavigationState.setDesktopFailed();
                 DesktopNavigationState.setDesktopFailed();
                 DesktopNavigationState.addInstallLog("No CLI output received. Check connection or terminal.");
                 if (sCallback != null) sCallback.onDownloadFailed("Timeout");
@@ -125,6 +137,7 @@ public final class DesktopResourceManager {
 
         if (callback != null) {
             sHandler.post(callback::onDownloadStarted);
+            sHandler.post(sProgressTicker);
         }
 
         String logFile = getLogFilePath(handle);
@@ -136,34 +149,41 @@ public final class DesktopResourceManager {
             "LOG_FILE=" + shellQuote(logFile) + ";\n" +
             "{\n" +
             "  printf \"TERMUX_PRO_DESKTOP_LOG:Preparing environment...\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:5\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PHASE:INITIALIZING\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:2\\n\";\n" +
             "  printf \"TERMUX_PRO_DESKTOP_LOG:Updating package lists...\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PHASE:UPDATING\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:5\\n\";\n" +
             "  apt update;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:10\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Installing x11, tur and glibc repos...\\n\";\n" +
+            "  pkg install -y x11-repo tur-repo glibc-repo || pkg install -y x11-repo;\n" +
             "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:15\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Installing x11-repo...\\n\";\n" +
-            "  pkg install -y x11-repo || exit 20;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:25\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE, X11, Python, Node.js, Git and Vim...\\n\";\n" +
-            "  pkg install -y xkeyboard-config dbus gvfs xfce4 xfce4-terminal thunar libxres gtk3 clang pkg-config coreutils papirus-icon-theme python nodejs git vim || exit 21;\n" +
+            "  apt update;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:20\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE Desktop...\\n\";\n" +
+            "  pkg install -y xkeyboard-config dbus gvfs xfce4 inotify-tools xdg-utils || exit 21;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:45\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading terminal and utilities...\\n\";\n" +
+            "  pkg install -y xfce4-terminal thunar libxres gtk3 coreutils || exit 21;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:65\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading development tools...\\n\";\n" +
+            "  pkg install -y clang pkg-config papirus-icon-theme python nodejs git vim || exit 21;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:85\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PHASE:CONFIGURING\\n\";\n" +
             "  gtk-update-icon-cache -f \"$PREFIX/share/icons/Papirus\" 2>/dev/null;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Creating desktop shortcuts for core tools...\\n\";\n" +
-            "  for tool in node git vim; do\n" +
-            "    FILE=\"$PREFIX/share/applications/$tool-custom.desktop\";\n" +
-            "    [ ! -f \"$FILE\" ] && printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=$tool\\nExec=xfce4-terminal -e $tool\\nIcon=utilities-terminal\\nTerminal=false\\nCategories=Development;\\n\" > \"$FILE\";\n" +
-            "    cp \"$FILE\" \"$HOME/Desktop/\" 2>/dev/null;\n" +
-            "    chmod 755 \"$HOME/Desktop/$(basename \"$FILE\")\" 2>/dev/null;\n" +
-            "  done;\n" +
-            "  gio set -t string \"$HOME/Desktop/node-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/node-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
-            "  gio set -t string \"$HOME/Desktop/git-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/git-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
-            "  gio set -t string \"$HOME/Desktop/vim-custom.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$HOME/Desktop/vim-custom.desktop\" | cut -d' ' -f1)\" 2>/dev/null;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:88\\n\";\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_LOG:Configuring applications...\\n\";\n" +
             "  sync;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:92\\n\";\n" +
             "  printf \"TERMUX_PRO_DESKTOP_LOG:Compiling native App Store...\\n\";\n" +
             "  clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" $(pkg-config --cflags --libs gtk+-3.0) -lpthread || exit 22;\n" +
+            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:98\\n\";\n" +
             "  chmod 755 \"$PREFIX/bin/termux-pro-app-store\";\n" +
             "  mkdir -p \"$PREFIX/share/applications\";\n" +
-            "  ICON_PATH=$(find \"$PREFIX/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"mintinstall.png\" | head -n 1);\n" +
-            "  [ -z \"$ICON_PATH\" ] && ICON_PATH=\"mintinstall\";\n" +
+            "  ICON_PATH=$(find \"$PREFIX/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"software-center.svg\" -o -name \"system-software-install.svg\" | head -n 1);\n" +
+            "  [ -z \"$ICON_PATH\" ] && ICON_PATH=\"system-software-install\";\n" +
             "  printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=%%s/bin/termux-pro-app-store\\nIcon=%%s\\nTerminal=false\\n' \"$PREFIX\" \"$ICON_PATH\" > \"$PREFIX/share/applications/termux-pro-app-store.desktop\";\n" +
             "  chmod 755 \"$PREFIX/share/applications/termux-pro-app-store.desktop\";\n" +
             "  sync;\n" +
@@ -251,23 +271,26 @@ public final class DesktopResourceManager {
                     changed = true;
 
                     // Still perform stage detection to update UI progress indicators
+                    String currentPhase = DesktopNavigationState.getInstallPhase();
+                    int currentProgress = DesktopNavigationState.getInstallProgress();
+
                     if (lineContent.contains("Get:") || lineContent.contains("Ign:") || lineContent.contains("Hit:") || lineContent.contains("Reading package lists") || lineContent.contains("Fetched")) {
-                        DesktopNavigationState.setInstallPhase("DOWNLOADING");
-                        int progress = Math.max(10, Math.min(70, DesktopNavigationState.getInstallProgress() + 1));
-                        if (progress != DesktopNavigationState.getInstallProgress()) {
-                            DesktopNavigationState.setInstallProgress(progress);
+                        if ("UPDATING".equals(currentPhase) || "DOWNLOADING".equals(currentPhase)) {
+                            if (!"DOWNLOADING".equals(currentPhase)) DesktopNavigationState.setInstallPhase("DOWNLOADING");
+                            int nextProgress = Math.max(20, Math.min(60, currentProgress + 1));
+                            DesktopNavigationState.setInstallProgress(nextProgress);
                         }
                     } else if (lineContent.contains("Preparing to unpack") || lineContent.contains("Unpacking") || lineContent.contains("Selecting previously unselected")) {
-                        DesktopNavigationState.setInstallPhase("INSTALLING");
-                        int progress = Math.max(60, Math.min(90, DesktopNavigationState.getInstallProgress() == -1 ? 60 : DesktopNavigationState.getInstallProgress()));
-                        if (progress != DesktopNavigationState.getInstallProgress()) {
-                            DesktopNavigationState.setInstallProgress(progress);
+                        if ("DOWNLOADING".equals(currentPhase) || "INSTALLING".equals(currentPhase)) {
+                            if (!"INSTALLING".equals(currentPhase)) DesktopNavigationState.setInstallPhase("INSTALLING");
+                            int nextProgress = Math.max(60, Math.min(85, currentProgress == -1 ? 60 : currentProgress));
+                            DesktopNavigationState.setInstallProgress(nextProgress);
                         }
                     } else if (lineContent.contains("Setting up") || lineContent.contains("Processing triggers") || lineContent.contains("update-alternatives")) {
-                        DesktopNavigationState.setInstallPhase("FINALIZING");
-                        int progress = Math.max(85, Math.min(99, DesktopNavigationState.getInstallProgress() == -1 ? 85 : DesktopNavigationState.getInstallProgress()));
-                        if (progress != DesktopNavigationState.getInstallProgress()) {
-                            DesktopNavigationState.setInstallProgress(progress);
+                        if ("INSTALLING".equals(currentPhase) || "CONFIGURING".equals(currentPhase)) {
+                            // Only switch to CONFIGURING if the script hasn't done it yet
+                            int nextProgress = Math.max(75, Math.min(95, currentProgress == -1 ? 75 : currentProgress));
+                            DesktopNavigationState.setInstallProgress(nextProgress);
                         }
                     }
                 }
@@ -355,22 +378,16 @@ public final class DesktopResourceManager {
                     
                     // Requirement: Use a highly professional Blue App Store icon (Papirus Software Center)
                     String desktopIconCmd = "mkdir -p " + appsDir + " && " +
-                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon=org.gnome.Software\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
+                        "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon=software-center\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
                         "chmod 755 " + desktopFile + " && " +
-                        "rm -f $HOME/Desktop/termux-pro-app-store.desktop && " +
-                        "cp " + desktopFile + " $HOME/Desktop/ 2>/dev/null && " +
-                        "chmod 755 $HOME/Desktop/termux-pro-app-store.desktop 2>/dev/null && " +
-                        "if command -v gio >/dev/null; then " +
-                        "  gio set -t string $HOME/Desktop/termux-pro-app-store.desktop metadata::xfce-exe-checksum \"$(sha256sum $HOME/Desktop/termux-pro-app-store.desktop | cut -d' ' -f1)\" 2>/dev/null; " +
-                        "fi; " +
-                        "touch $HOME/Desktop/termux-pro-app-store.desktop && " +
+                        "touch " + desktopFile + " && " +
                         "sync";
                     
                     new ProcessBuilder(PREFIX + "/bin/bash", "-c", desktopIconCmd).start().waitFor();
                     new ProcessBuilder(PREFIX + "/bin/bash", "-c", "sync").start().waitFor();
                     Log.d(LOG_TAG, "Desktop icon created successfully at " + desktopFile);
                 } else {
-                    Log.e(LOG_TAG, "Compilation failed with exit code " + exitCode);
+                    Log.e(LOG_TAG, "Compilation failed with exitCode " + exitCode);
                 }
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Provisioning failed", e);

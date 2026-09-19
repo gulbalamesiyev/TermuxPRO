@@ -10,7 +10,6 @@ import static com.termux.x11.LoriePreferences.ACTION_PREFERENCES_CHANGED;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.AppOpsManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -28,12 +27,13 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.display.DisplayManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.Settings;
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final Runnable tryConnectRunnable = this::tryConnect;
 
-    private static final Handler sLaunchHandler = new Handler(android.os.Looper.getMainLooper());
+    private static final Handler sLaunchHandler = new Handler(Looper.getMainLooper());
     private static Runnable sPendingLaunchRunnable = null;
 
     public static void cancelPendingLaunch() {
@@ -195,6 +195,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static Bundle sPendingConnectionBundle = null;
     private static String sPendingLaunchToken = null;
+
+    /** Bounded wait for the bridge to become READY before starting a fresh renderer. */
+    private static final int MAX_READY_RETRIES = 8;
+    private static int sReadyRetryCount = 0;
 
     public static void launchOrReuse(Context context, Bundle connectionBundle, String launchToken) {
         if (connectionBundle != null) {
@@ -212,27 +216,28 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Log.i("MainActivity", "Scheduling renderer foregrounding in 1500ms settling window");
+        Log.i("MainActivity", "Scheduling renderer foregrounding (immediate)");
         DesktopNavigationState.setDesktopLaunchPending(true);
 
         sPendingLaunchRunnable = () -> {
             sPendingLaunchRunnable = null;
 
-            // A live renderer instance means the bridge already delivered a surface to this
-            // task before, so we can foreground it regardless of the (possibly regressed) boot
-            // state. Otherwise wait for the bridge to be genuinely READY before starting.
             boolean hasLiveRenderer = instance != null;
             if (!hasLiveRenderer
-                && DesktopNavigationState.getDesktopBootState() != DesktopNavigationState.DesktopBootState.READY) {
-                Log.i("MainActivity", "Bridge is not ready yet; retrying renderer foregrounding in 250ms");
+                && DesktopNavigationState.getDesktopBootState() != DesktopNavigationState.DesktopBootState.READY
+                && ++sReadyRetryCount < MAX_READY_RETRIES) {
+                Log.i("MainActivity", "Bridge is not ready yet; retrying renderer foregrounding in 250ms ("
+                    + sReadyRetryCount + "/" + MAX_READY_RETRIES + ")");
                 DesktopNavigationState.setDesktopLaunchPending(true);
                 sPendingLaunchRunnable = thisRunnable();
                 sLaunchHandler.postDelayed(sPendingLaunchRunnable, 250);
                 return;
             }
+            sReadyRetryCount = 0;
 
             DesktopNavigationState.setDesktopLaunchPending(false);
-            Log.i("MainActivity", "Settling window complete; foregrounding renderer (live=" + hasLiveRenderer + ")");
+            context.sendBroadcast(new Intent("com.termux.x11.ACTION_PREFERENCES_CHANGED").putExtra("fromBroadcast", true));
+            Log.i("MainActivity", "Foregrounding renderer (live=" + hasLiveRenderer + ")");
             Intent intent = new Intent(ACTION_START);
             intent.setClass(context, MainActivity.class);
             
@@ -251,25 +256,22 @@ public class MainActivity extends AppCompatActivity {
             if (tokenToUse != null) {
                 intent.putExtra(CmdEntryPoint.EXTRA_DESKTOP_OWNER_HANDLE, tokenToUse);
             }
-            // Do NOT set FLAG_ACTIVITY_NEW_TASK here: on this device the host runtime reports
-            // MULTI_WINDOW_ENABLED=false, so spawning a brand-new renderer window never surfaces.
-            // Instead send the intent to the existing renderer task (in-place) and bring it to front,
-            // which works whether the renderer is already alive or being created for the first time.
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
                 | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             
             try {
                 context.startActivity(intent);
             } catch (Exception e) {
-                Log.e("MainActivity", "Failed to start renderer activity after settling delay", e);
+                Log.e("MainActivity", "Failed to start renderer activity", e);
             } finally {
                 sPendingConnectionBundle = null;
                 sPendingLaunchToken = null;
             }
         };
 
-        sLaunchHandler.postDelayed(sPendingLaunchRunnable, 1500);
+        sLaunchHandler.post(sPendingLaunchRunnable);
     }
 
     private static Runnable thisRunnable() {
@@ -313,15 +315,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    ViewTreeObserver.OnPreDrawListener mOnPredrawListener = new ViewTreeObserver.OnPreDrawListener() {
-        @Override
-        public boolean onPreDraw() {
-            if (!getLorieView().connected())
-                return false;
+    ViewTreeObserver.OnPreDrawListener mOnPredrawListener = () -> {
+        if (!getLorieView().connected())
+            return false;
 
-            finishStartupDraw();
-            return true;
-        }
+        finishStartupDraw();
+        return true;
     };
 
     private void finishStartupDraw() {
@@ -623,8 +622,7 @@ public class MainActivity extends AppCompatActivity {
         overlay.setOnTouchListener((v, e) -> true);
         overlay.setOnHoverListener((v, e) -> true);
         overlay.setOnGenericMotionListener((v, e) -> true);
-        if (SDK_INT >= VERSION_CODES.O)
-            overlay.setOnCapturedPointerListener((v, e) -> true);
+        overlay.setOnCapturedPointerListener((v, e) -> true);
         overlay.setVisibility(stylusMenuEnabled ? View.VISIBLE : View.GONE);
         View.OnClickListener listener = view -> {
             TouchInputHandler.STYLUS_INPUT_HELPER_MODE = (view.equals(left) ? 1 : (view.equals(middle) ? 2 : (view.equals(right) ? 4 : 0)));
@@ -1262,14 +1260,12 @@ public class MainActivity extends AppCompatActivity {
 
     private String getNotificationChannel(NotificationManager notificationManager){
         String channelId = getResources().getString(R.string.lorie_app_name);
-        if (SDK_INT >= VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId, channelId, NotificationManager.IMPORTANCE_HIGH);
-            channel.setImportance(NotificationManager.IMPORTANCE_HIGH);
-            channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
-            if (SDK_INT >= VERSION_CODES.Q)
-                channel.setAllowBubbles(false);
-            notificationManager.createNotificationChannel(channel);
-        }
+        NotificationChannel channel = new NotificationChannel(channelId, channelId, NotificationManager.IMPORTANCE_HIGH);
+        channel.setImportance(NotificationManager.IMPORTANCE_HIGH);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+        if (SDK_INT >= VERSION_CODES.Q)
+            channel.setAllowBubbles(false);
+        notificationManager.createNotificationChannel(channel);
         return channelId;
     }
 
@@ -1308,7 +1304,7 @@ public class MainActivity extends AppCompatActivity {
     private void applyImmersiveMode() {
         boolean isFullscreen = prefs.fullscreen.get();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (SDK_INT >= VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(!isFullscreen);
             WindowInsetsController controller = getWindow().getInsetsController();
             if (controller != null) {
@@ -1434,6 +1430,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
     }
@@ -1451,10 +1448,10 @@ public class MainActivity extends AppCompatActivity {
         AppOpsManager appOpsManager = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
         if (appOpsManager == null)
             return false;
-        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            return appOpsManager.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), context.getPackageName()) == AppOpsManager.MODE_ALLOWED;
+        else if (SDK_INT >= VERSION_CODES.Q)
+            return appOpsManager.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, Process.myUid(), context.getPackageName()) == AppOpsManager.MODE_ALLOWED;
         else
-            return appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), context.getPackageName()) == AppOpsManager.MODE_ALLOWED;
+            return appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, Process.myUid(), context.getPackageName()) == AppOpsManager.MODE_ALLOWED;
     }
 
     @RequiresApi(api = VERSION_CODES.O)

@@ -284,8 +284,6 @@ public class LorieView extends SurfaceView implements InputStub {
 
         @Override public void surfaceChanged(@NonNull SurfaceHolder holder, int f, int width, int height) {
             LorieView.this.surfaceChanged(mNativeContext, holder.getSurface());
-            width = getMeasuredWidth();
-            height = getMeasuredHeight();
 
             updateViewport();
         }
@@ -620,7 +618,7 @@ public class LorieView extends SurfaceView implements InputStub {
     public void checkForClipboardChange() {
         ClipDescription desc = clipboard.getPrimaryClipDescription();
         // Below API 26 the clipboard carries no timestamp, so every change looks like a new one.
-        long timestamp = desc == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? lastClipboardTimestamp + 1 : desc.getTimestamp();
+        long timestamp = desc == null ? lastClipboardTimestamp + 1 : desc.getTimestamp();
         if (clipboardSyncEnabled && desc != null &&
                 lastClipboardTimestamp < timestamp &&
                 desc.getMimeTypeCount() == 1 &&

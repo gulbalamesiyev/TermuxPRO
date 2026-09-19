@@ -13,7 +13,10 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
+
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -75,7 +78,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
     private final IBinder mBinder = new LocalBinder();
 
-    private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
 
     /** The full implementation of the {@link TerminalSessionClient} interface to be used by {@link TerminalSession}
@@ -209,7 +212,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
     /** Make service leave foreground mode. */
     private void runStopForeground() {
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_REMOVE);
     }
 
     /** Request to stop service. */
@@ -451,7 +454,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         }
 
         if (newTermuxTask == null)
-            newTermuxTask = createTermuxTask(executionCommand);
+            createTermuxTask(executionCommand);
     }
 
     /** Create a TermuxTask. */
@@ -885,7 +888,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     }
 
     public synchronized List<TermuxSession> getTermuxSessions() {
-        return new java.util.ArrayList<>(mShellManager.mTermuxSessions);
+        return new ArrayList<>(mShellManager.mTermuxSessions);
     }
 
     @Nullable
@@ -916,7 +919,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         if (terminalSession == null) return -1;
 
         for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++) {
-            if (mShellManager.mTermuxSessions.get(i).getTerminalSession().equals(terminalSession))
+            if (Objects.equals(mShellManager.mTermuxSessions.get(i).getTerminalSession(), terminalSession))
                 return i;
         }
         return -1;

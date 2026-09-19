@@ -2,6 +2,7 @@ package com.termux.app;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.os.Looper;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -25,7 +26,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -50,7 +50,6 @@ import com.termux.app.desktop.DesktopResourceManager;
 import com.termux.app.desktop.DesktopSessionOrchestrator;
 import com.termux.shared.termux.crash.TermuxCrashUtils;
 import com.termux.shared.termux.settings.preferences.TermuxAppSharedPreferences;
-import com.termux.app.terminal.SessionCenterController;
 import com.termux.app.terminal.SessionCenterController;
 import com.termux.app.terminal.TermuxSessionsListViewController;
 import com.termux.app.terminal.io.TerminalToolbarViewPager;
@@ -221,8 +220,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private static final String LOG_TAG = "TermuxActivity";
 
-    private final Handler mDesktopBootHandler = new Handler();
-    private final Handler mDesktopShutdownHandler = new Handler();
+    private final Handler mDesktopBootHandler = new Handler(Looper.getMainLooper());
+    private final Handler mDesktopShutdownHandler = new Handler(Looper.getMainLooper());
     private final Handler mStartupInteractionHandler = new Handler();
     private boolean mIsStartupInteractionBlocked = true;
     private String mWatchedOwnerHandle = null;
@@ -1040,27 +1039,24 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      * if targeting targetSdkVersion 30 (android 11) and running on sdk 30 (android 11) and higher.
      */
     public void requestStoragePermission(boolean isPermissionCallback) {
-        new Thread() {
-            @Override
-            public void run() {
-                // Do not ask for permission again
-                int requestCode = isPermissionCallback ? -1 : PermissionUtils.REQUEST_GRANT_STORAGE_PERMISSION;
+        new Thread(() -> {
+            // Do not ask for permission again
+            int requestCode = isPermissionCallback ? -1 : PermissionUtils.REQUEST_GRANT_STORAGE_PERMISSION;
 
-                // If permission is granted, then also setup storage symlinks.
-                if(PermissionUtils.checkAndRequestLegacyOrManageExternalStoragePermission(
+            // If permission is granted, then also setup storage symlinks.
+            if (PermissionUtils.checkAndRequestLegacyOrManageExternalStoragePermission(
                     TermuxActivity.this, requestCode, !isPermissionCallback)) {
-                    if (isPermissionCallback)
-                        Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
+                if (isPermissionCallback)
+                    Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
                             getString(com.termux.shared.R.string.msg_storage_permission_granted_on_request));
 
-                    TermuxInstaller.setupStorageSymlinks(TermuxActivity.this);
-                } else {
-                    if (isPermissionCallback)
-                        Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
+                TermuxInstaller.setupStorageSymlinks(TermuxActivity.this);
+            } else {
+                if (isPermissionCallback)
+                    Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
                             getString(com.termux.shared.R.string.msg_storage_permission_not_granted_on_request));
-                }
             }
-        }.start();
+        }).start();
     }
 
     @Override
@@ -1165,12 +1161,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public DrawerLayout getDrawer() {
-        return (DrawerLayout) findViewById(R.id.drawer_layout);
+        return findViewById(R.id.drawer_layout);
     }
 
 
     public ViewPager getTerminalToolbarViewPager() {
-        return (ViewPager) findViewById(R.id.terminal_toolbar_view_pager);
+        return findViewById(R.id.terminal_toolbar_view_pager);
     }
 
     public float getTerminalToolbarDefaultHeight() {
@@ -1258,8 +1254,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         intentFilter.addAction(TERMUX_ACTIVITY.ACTION_RELOAD_STYLE);
         intentFilter.addAction(TERMUX_ACTIVITY.ACTION_REQUEST_PERMISSIONS);
         intentFilter.addAction("com.termux.x11.CmdEntryPoint.ACTION_START");
+        intentFilter.addAction("com.termux.x11.ACTION_PREFERENCES_CHANGED");
 
-        ContextCompat.registerReceiver(this, mTermuxActivityBroadcastReceiver, intentFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        ContextCompat.registerReceiver(this, mTermuxActivityBroadcastReceiver, intentFilter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     private void unregisterTermuxActivityBroadcastReceiver() {
@@ -1284,7 +1281,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             if (mIsVisible) {
                 fixTermuxActivityBroadcastReceiverIntent(intent);
 
-                switch (intent.getAction()) {
+                String action = intent.getAction();
+        if (action == null) return;
+        switch (action) {
                     case TERMUX_ACTIVITY.ACTION_NOTIFY_APP_CRASH:
                         Logger.logDebug(LOG_TAG, "Received intent to notify app crash");
                         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(context, LOG_TAG);
@@ -1319,6 +1318,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         if (openDesktopWhenReady) {
                             DesktopRendererLauncher.open(TermuxActivity.this, connectionBundle);
                         }
+                        return;
+                    case "com.termux.x11.ACTION_PREFERENCES_CHANGED":
+                        termuxSessionListNotifyUpdated();
                         return;
                     default:
                 }

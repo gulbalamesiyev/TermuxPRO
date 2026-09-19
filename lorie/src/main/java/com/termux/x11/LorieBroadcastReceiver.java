@@ -57,9 +57,7 @@ public class LorieBroadcastReceiver extends BroadcastReceiver {
             Log.w("LorieBroadcastReceiver", "CONNECTION_BUNDLE_PRESENT false action=" + intent.getAction());
         }
 
-        boolean shouldForegroundRenderer =
-            !DesktopNavigationState.isCliForeground()
-                && DesktopNavigationState.isDesktopPending();
+        boolean shouldForegroundRenderer = DesktopNavigationState.isDesktopPending();
 
         DesktopNavigationState.addInstallLog("X11: ACTION_START received; bridge listener is ready.");
         // Point 9: mark the visual renderer ready only after LorieView.connected() is true.

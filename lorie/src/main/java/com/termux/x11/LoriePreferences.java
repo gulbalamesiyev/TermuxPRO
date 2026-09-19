@@ -71,7 +71,6 @@ import com.termux.x11.utils.KeyInterceptor;
 import com.termux.x11.utils.SamsungDexUtils;
 import com.termux.x11.utils.TermuxX11ExtraKeys;
 
-import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -152,10 +151,7 @@ public class LoriePreferences extends AppCompatActivity implements PreferenceFra
     protected void onResume() {
         super.onResume();
         IntentFilter filter = new IntentFilter(ACTION_PREFERENCES_CHANGED);
-        if (SDK_INT >= Build.VERSION_CODES.O)
-            registerReceiver(receiver, filter, SDK_INT >= Build.VERSION_CODES.TIRAMISU ? RECEIVER_NOT_EXPORTED : 0);
-        else
-            registerReceiver(receiver, filter);
+        registerReceiver(receiver, filter, SDK_INT >= Build.VERSION_CODES.TIRAMISU ? RECEIVER_NOT_EXPORTED : 0);
     }
 
     @Override
@@ -301,12 +297,6 @@ public class LoriePreferences extends AppCompatActivity implements PreferenceFra
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
                 setVisible("hideCutout", false);
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                setVisible("pointerCapture", false);
-                setVisible("transformCapturedPointer", false);
-                setVisible("capturedPointerSpeedFactor", false);
-            }
-
             boolean stylusAvailable = Arrays.stream(InputDevice.getDeviceIds())
                     .mapToObj(InputDevice::getDevice)
                     .filter(Objects::nonNull)
@@ -324,11 +314,7 @@ public class LoriePreferences extends AppCompatActivity implements PreferenceFra
         private void setSummary(CharSequence key, int disabled) {
             Preference pref = findPreference(key);
             if (pref != null)
-                pref.setSummaryProvider(new Preference.SummaryProvider<>() {
-                    @Nullable @Override public CharSequence provideSummary(@NonNull Preference p) {
-                        return p.isEnabled() ? null : getResources().getString(disabled);
-                    }
-                });
+                pref.setSummaryProvider(p -> p.isEnabled() ? null : getResources().getString(disabled));
         }
 
         private void setVisible(CharSequence key, boolean value) {

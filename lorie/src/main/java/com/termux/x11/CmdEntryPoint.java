@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.IIntentSender;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -101,7 +100,7 @@ public class CmdEntryPoint extends ICmdEntryInterface.Stub {
                     Log.i("CmdEntryPoint", "CMD_APP_ARG_CONSUMED=--desktop-owner tokenHash="
                             + Integer.toHexString(token.hashCode()));
                 } else {
-                    Log.i("CmdEntryPoint", "CMD_ORIGINAL_ARG[" + i + "]=" + String.valueOf(arg));
+                    Log.i("CmdEntryPoint", "CMD_ORIGINAL_ARG[" + i + "]=" + arg);
                 }
             }
         }
@@ -229,7 +228,7 @@ public class CmdEntryPoint extends ICmdEntryInterface.Stub {
         } catch (Exception e) {
             Log.e("CmdEntryPoint", "Something went wrong when preparing MainLooper", e);
         }
-        handler = new Handler();
+        handler = new Handler(Looper.getMainLooper());
     }
 
     private static void initEntryPoint() {

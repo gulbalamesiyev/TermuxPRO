@@ -1,5 +1,7 @@
 package com.termux.x11;
 
+import android.os.Bundle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,12 +22,13 @@ public final class DesktopNavigationState {
     private static final AtomicReference<String> activeDesktopOwnerHandle = new AtomicReference<>(null);
     private static final AtomicReference<String> pendingDesktopLaunchToken = new AtomicReference<>(null);
     private static final AtomicBoolean desktopOwnerStopping = new AtomicBoolean(false);
-    private static final AtomicReference<android.os.Bundle> lastConnectionBundle = new AtomicReference<>(null);
+    private static final AtomicReference<Bundle> lastConnectionBundle = new AtomicReference<>(null);
     private static final AtomicReference<DesktopBootState> bootState = new AtomicReference<>(DesktopBootState.IDLE);
     private static final AtomicReference<String> activeInstallSessionHandle = new AtomicReference<>(null);
     private static final AtomicReference<String> activeInstallLogHandle = new AtomicReference<>(null);
     private static final AtomicReference<String> installPhase = new AtomicReference<>("");
     private static final AtomicInteger installProgress = new AtomicInteger(-1);
+    private static final AtomicInteger visualProgress = new AtomicInteger(-1);
     private static final AtomicReference<List<String>> installLogs = new AtomicReference<>(Collections.synchronizedList(new ArrayList<>()));
     private static final AtomicReference<String> startFailureReason = new AtomicReference<>(null);
     private static final AtomicBoolean desktopLaunchPending = new AtomicBoolean(false);
@@ -35,8 +38,20 @@ public final class DesktopNavigationState {
     public static String getInstallPhase() { return installPhase.get(); }
     public static void setInstallPhase(String phase) { installPhase.set(phase); }
 
-    public static int getInstallProgress() { return installProgress.get(); }
-    public static void setInstallProgress(int progress) { installProgress.set(progress); }
+    public static int getInstallProgress() { return visualProgress.get(); }
+    public static void setInstallProgress(int progress) {
+        installProgress.set(progress);
+        if (progress == -1) visualProgress.set(-1);
+        if (progress == 100) visualProgress.set(100);
+    }
+
+    public static void tickVisualProgress() {
+        int target = installProgress.get();
+        int current = visualProgress.get();
+        if (target > current && target != -1) {
+            visualProgress.incrementAndGet();
+        }
+    }
 
     public static List<String> getInstallLogs() {
         synchronized (installLogs.get()) {
@@ -167,7 +182,7 @@ public final class DesktopNavigationState {
         setDesktopReady(null);
     }
 
-    public static void setDesktopReady(android.os.Bundle connectionBundle) {
+    public static void setDesktopReady(Bundle connectionBundle) {
         if (connectionBundle != null) {
             lastConnectionBundle.set(connectionBundle);
         }
@@ -180,11 +195,11 @@ public final class DesktopNavigationState {
         desktopLaunchPending.set(false);
     }
 
-    public static void setLastConnectionBundle(android.os.Bundle connectionBundle) {
+    public static void setLastConnectionBundle(Bundle connectionBundle) {
         lastConnectionBundle.set(connectionBundle);
     }
 
-    public static android.os.Bundle getLastConnectionBundle() {
+    public static Bundle getLastConnectionBundle() {
         return lastConnectionBundle.get();
     }
 
@@ -200,6 +215,8 @@ public final class DesktopNavigationState {
         desktopPending.set(false);
         desktopLaunchPending.set(false);
         lastConnectionBundle.set(null);
+        installProgress.set(-1);
+        visualProgress.set(-1);
     }
 
     public static void setDesktopStartFailureReason(String reason) {

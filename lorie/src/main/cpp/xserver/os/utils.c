@@ -1793,6 +1793,8 @@ System(const char *cmdline)
 Bool
 PrivsElevated(void)
 {
+    return FALSE;
+#if 0
     static Bool privsTested = FALSE;
     static Bool privsElevated = TRUE;
 
@@ -1851,6 +1853,7 @@ PrivsElevated(void)
         privsTested = TRUE;
     }
     return privsElevated;
+#endif
 }
 
 /*
@@ -1897,8 +1900,8 @@ PrivsElevated(void)
 #define USE_ISPRINT 0
 #endif
 
-#define MAX_ARG_LENGTH          128
-#define MAX_ENV_LENGTH          256
+#define MAX_ARG_LENGTH          4096
+#define MAX_ENV_LENGTH          4096
 #define MAX_ENV_PATH_LENGTH     2048    /* Limit for *PATH and TERMCAP */
 
 #if USE_ISPRINT

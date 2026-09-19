@@ -56,20 +56,10 @@ public final class DesktopSessionOrchestrator {
             "export XKB_CONFIG_ROOT=\"" + PREFIX + "/share/X11/xkb\"; " +
             "export TMPDIR=\"" + PREFIX + "/tmp\"; mkdir -p \"$TMPDIR/.X11-unix\"; rm -f \"$TMPDIR/.X11-unix/X1\"; " +
             "mkdir -p \"$HOME/Desktop\" \"$HOME/.config/autostart\"; " +
-            "if [ ! -f \"" + PREFIX + "/bin/termux-pro-app-store\" ]; then rm -f \"$HOME/Desktop/app-store.desktop\" \"$HOME/Desktop/App Store.desktop\"; fi; " +
-            "if [ ! -d \"" + PREFIX + "/share/X11/xkb\" ]; then pkg install -y x11-repo xkeyboard-config coreutils; fi; " +
-            "if [ ! -d \"" + PREFIX + "/share/icons/Papirus\" ]; then pkg install -y papirus-icon-theme; fi; " +
-            "if ! pkg list-installed x11-repo >/dev/null 2>&1; then pkg install -y x11-repo; apt update; fi; " +
-            "c_d() { local s=\"" + PREFIX + "/share/applications/$1\"; local d=\"$HOME/Desktop/$1\"; if [ -f \"$s\" ]; then cp \"$s\" \"$d\"; chmod 755 \"$d\"; fi; }; " +
-            "for f in thunar.desktop xfce4-terminal.desktop xfce4-settings-manager.desktop xfce4-appearance-settings.desktop xfce4-display-settings.desktop xfce4-keyboard-settings.desktop xfce4-mouse-settings.desktop xfce4-accessibility-settings.desktop xfwm4-settings.desktop xfdesktop-settings.desktop xfce4-notifyd-config.desktop xfce4-power-manager-settings.desktop exo-preferred-applications.desktop xfce4-appfinder.desktop xfce4-about.desktop xfce4-mime-settings.desktop xfce4-screenshooter.desktop xfce4-session-logout.desktop xfce4-taskmanager.desktop xfwm4-workspace-settings.desktop thunar-settings.desktop thunar-bulk-rename.desktop termux-pro-app-store.desktop; do c_d \"$f\"; done; " +
-            "if [ -x \"" + PREFIX + "/bin/termux-pro-app-store\" ] && [ ! -f \"$HOME/Desktop/termux-pro-app-store.desktop\" ]; then " +
-            "ICON_PATH=$(find \"" + PREFIX + "/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"mintinstall.png\" | head -n 1); " +
-            "[ -z \"$ICON_PATH\" ] && ICON_PATH=\"mintinstall\"; " +
-            "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + PREFIX + "/bin/termux-pro-app-store\\nIcon='\"$ICON_PATH\"'\\nTerminal=false\\n' > \"$HOME/Desktop/termux-pro-app-store.desktop\"; " +
-            "chmod 755 \"$HOME/Desktop/termux-pro-app-store.desktop\"; " +
-            "fi; " +
             "printf '[Desktop Entry]\\nType=Application\\nName=Power Manager Override\\nHidden=true\\n' > \"$HOME/.config/autostart/xfce4-power-manager.desktop\"; " +
-            "printf '#!/bin/bash\\nsleep 3\\nfor f in \"$HOME/Desktop\"/*.desktop; do [ -f \"$f\" ] || continue; chmod +x \"$f\"; command -v gio >/dev/null && gio set -t string \"$f\" metadata::xfce-exe-checksum \"$(sha256sum \"$f\" | cut -d\" \" -f1)\" 2>/dev/null; done\\nxfdesktop --reload 2>/dev/null\\n' > \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
+            "printf \"#\\\\x21/bin/bash\\ntrust_file() { [ -f \\\"\\$1\\\" ] || return; chmod +x \\\"\\$1\\\"; command -v gio >/dev/null && gio set -t string \\\"\\$1\\\" metadata::xfce-exe-checksum \\\"\\$(sha256sum \\\"\\$1\\\" | cut -d' ' -f1)\\\" 2>/dev/null; }; \" > \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
+            "printf \"for f in \\\"\\$HOME/Desktop\\\"/*.desktop; do trust_file \\\"\\$f\\\"; done; xfdesktop --reload 2>/dev/null; \" >> \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
+            "printf \"if command -v inotifywait >/dev/null; then inotifywait -m -e create,moved_to \\\"\\$HOME/Desktop\\\" --format '%%f' | while read NEW; do [[ \\\"\\$NEW\\\" == *.desktop ]] && { sleep 0.5; trust_file \\\"\\$HOME/Desktop/\\$NEW\\\"; }; done; fi\\n\" >> \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
             "chmod 755 \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
             "printf '[Desktop Entry]\\nType=Application\\nName=Desktop Trust\\nExec=" + PREFIX + "/bin/termux-pro-desktop-trust-icons\\nOnlyShowIn=XFCE;\\nNoDisplay=true\\n' > \"$HOME/.config/autostart/termux-pro-desktop-trust.desktop\"; " +
             "xfconf-query -c xfce4-desktop -p /desktop-icons/style -n -t int -s 2 >/dev/null 2>&1; " +
@@ -78,7 +68,7 @@ public final class DesktopSessionOrchestrator {
             "mkdir -p \"$HOME/.cache\"; echo $$ > \"$HOME/.cache/termux-pro-x11.pid\"; " +
             "echo \"Starting Termux-X11 bridge...\"; " +
             "/system/bin/app_process -Xnoimage-dex2oat / --nice-name=termux-x11 com.termux.x11.CmdEntryPoint :1 " +
-            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"export XDG_DATA_DIRS=" + PREFIX + "/share:\\$XDG_DATA_DIRS; dbus-launch --exit-with-session startxfce4\"; " +
+            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"export PATH=" + PREFIX + "/bin:\\$PATH; export XDG_DATA_DIRS=" + PREFIX + "/share:\\$XDG_DATA_DIRS; dbus-launch --exit-with-session startxfce4\"; " +
             "x11_status=$?; " +
             "echo \"X11 bridge stopped with status $x11_status\"; " +
             "rm -f \"$HOME/.cache/termux-pro-x11.pid\"; " +

@@ -51,9 +51,10 @@ public final class SessionCenterController {
         this.mAdapter = new SessionAdapter();
         this.mRecyclerView.setAdapter(mAdapter);
 
-        rootView.findViewById(R.id.session_center_new_session).setOnClickListener(v -> 
-            mActivity.getTermuxTerminalSessionClient().addNewSession(false, null)
-        );
+        rootView.findViewById(R.id.session_center_new_session).setOnClickListener(v -> {
+            mActivity.getTermuxTerminalSessionClient().addNewSession(false, null);
+            setVisible(true, false);
+        });
 
         rootView.findViewById(R.id.session_center_menu).setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(mActivity, v);
@@ -100,6 +101,13 @@ public final class SessionCenterController {
 
         if (visible) {
             mActivity.hideTerminalToolbarAndKeyboard();
+        }
+
+        if (visible && mRootView.getVisibility() == View.VISIBLE && mRootView.getAlpha() > 0.9f) {
+            mRootView.bringToFront();
+            mRootView.requestFocus();
+            if (overlay != null) overlay.setVisibility(View.GONE);
+            return;
         }
 
         if (!animate) {
@@ -373,13 +381,13 @@ public final class SessionCenterController {
                     case DOWNLOADING:
                         desktopButton.setEnabled(false);
                         desktopButton.setAlpha(0.6f);
-                        
+
                         String phase = DesktopNavigationState.getInstallPhase();
                         int progress = DesktopNavigationState.getInstallProgress();
-                        
+
                         String buttonText = phase + "...";
                         if (progress >= 0) buttonText = phase + " " + progress + "%";
-                        
+
                         desktopButton.setText(buttonText);
                         desktopButton.setOnClickListener(null);
 

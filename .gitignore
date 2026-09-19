@@ -1,38 +1,5 @@
-# From https://gist.github.com/iainconnor/8605514
-# with the addition of the /captures below.
-/captures
-
-# Built application files
+﻿.artifacts/
+.explyt/
 build/
-# release/  <-- Removed ignore to allow release artifacts
-*.so
-.externalNativeBuild
-.cxx
-*.zip
-
-# Local configuration file (sdk path, etc)
-local.properties
-
-# Gradle generated files
 .gradle/
-
-# Signing files
-.signing/
-
-# Intellij
-.idea/
-*.iml
-
-# Vim
-*.swo
-*.swp
-
-# OS-specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-.swp
-ehthumbs.db
-Thumbs.db
+*.log
