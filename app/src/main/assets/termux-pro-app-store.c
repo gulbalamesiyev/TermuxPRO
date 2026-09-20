@@ -26,6 +26,7 @@ typedef struct {
     GtkWidget *search_entry;
     GtkWidget *loading_label;
     GtkWidget *spinner;
+    GtkWidget *cat_box;
 } AppWidgets;
 
 AppEntry *catalog = NULL;
@@ -34,24 +35,19 @@ AppWidgets widgets;
 const char *LIST_URL_MAIN = "https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/main/apps.list";
 const char *LIST_URL_MASTER = "https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/master/apps.list";
 const char *LOCAL_PATH = "/data/data/com.termux/files/usr/var/lib/termux-pro/apps.list";
+char *current_category = "ALL";
 
 int is_installed(const char *name, const char *exec, const char *pkg) {
     char path[512];
     const char *home = getenv("HOME");
     if (!home) home = "/data/data/com.termux/files/home";
-
-    // 1. Primary Rule: If desktop icon exists, it is installed
     snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, name);
     if (access(path, F_OK) == 0) return 1;
-
-    // 2. Secondary: If executable exists in PATH
     if (exec && strlen(exec) > 0) {
         char cmd[256];
         snprintf(cmd, sizeof(cmd), "command -v %s >/dev/null 2>&1", exec);
         if (system(cmd) == 0) return 1;
     }
-
-    // 3. System check: dpkg database
     if (pkg && strlen(pkg) > 0) {
         char pkg_name[128] = {0};
         const char *search = pkg;
@@ -86,29 +82,40 @@ gboolean refresh_ui() {
     return FALSE;
 }
 
+void update_filter() {
+    const char *search_text = gtk_entry_get_text(GTK_ENTRY(widgets.search_entry));
+    if (!catalog) return;
+    for (int i = 0; i < catalog_size; i++) {
+        if (!catalog[i].row_widget) continue;
+        int match_cat = (strcmp(current_category, "ALL") == 0 || strcasecmp(catalog[i].category, current_category) == 0);
+        int match_search = (strlen(search_text) == 0 || strcasestr(catalog[i].name, search_text) || strcasestr(catalog[i].desc, search_text));
+        if (match_cat && match_search) gtk_widget_show(catalog[i].row_widget);
+        else gtk_widget_hide(catalog[i].row_widget);
+    }
+}
+
+void on_category_clicked(GtkButton *btn, gpointer data) {
+    GList *children = gtk_container_get_children(GTK_CONTAINER(widgets.cat_box));
+    for (GList *l = children; l != NULL; l = l->next) {
+        gtk_style_context_remove_class(gtk_widget_get_style_context(GTK_WIDGET(l->data)), "suggested-action");
+    }
+    g_list_free(children);
+    gtk_style_context_add_class(gtk_widget_get_style_context(GTK_WIDGET(btn)), "suggested-action");
+    current_category = (char *)data;
+    update_filter();
+}
+
 void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
     AppEntry *entry = (AppEntry*)data;
     char cmd[4096];
     snprintf(cmd, sizeof(cmd),
              "DISPLAY=:1 xfce4-terminal --title \"Uninstalling %s\" -x bash -c ' "
-             "echo \"Uninstalling %s...\"; "
-             "RAW_PKG=\"%s\"; EXEC_NAME=\"%s\"; "
-             "if echo \"$RAW_PKG\" | grep -q \"npm\"; then "
-             "  uninstall_cmd=${RAW_PKG/install/uninstall}; eval $uninstall_cmd; "
-             "else "
-             "  pkg uninstall -y \"$RAW_PKG\" 2>/dev/null; "
-             "  [ \"$RAW_PKG\" != \"$EXEC_NAME\" ] && pkg uninstall -y \"$EXEC_NAME\" 2>/dev/null; "
-             "fi; "
-             "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null; "
-             "EXEC_BASE=$(basename \"$EXEC_NAME\" 2>/dev/null | cut -d\" \" -f1); "
-             "if [ -n \"$EXEC_BASE\" ] && [ \"$EXEC_BASE\" != \".\" ]; then "
-             "  for d in \"$HOME/Desktop\"/*.desktop; do "
-             "    [ -f \"$d\" ] && grep -qiE \"^Exec=(.*[/ ])?$EXEC_BASE( |%%|$)\" \"$d\" 2>/dev/null && rm -f \"$d\"; "
-             "  done; "
-             "fi; "
-             "sync; xfdesktop --reload 2>/dev/null; "
-             "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; "
-             "echo \"Done.\"; sleep 1' &",
+             "echo \"Uninstalling %s...\"; RAW_PKG=\"%s\"; EXEC_NAME=\"%s\"; "
+             "if echo \"$RAW_PKG\" | grep -q \"npm\"; then uninstall_cmd=${RAW_PKG/install/uninstall}; eval $uninstall_cmd; "
+             "else pkg uninstall -y \"$RAW_PKG\" 2>/dev/null; [ \"$RAW_PKG\" != \"$EXEC_NAME\" ] && pkg uninstall -y \"$EXEC_NAME\" 2>/dev/null; fi; "
+             "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null; EXEC_BASE=$(basename \"$EXEC_NAME\" 2>/dev/null | cut -d\" \" -f1); "
+             "if [ -n \"$EXEC_BASE\" ] && [ \"$EXEC_BASE\" != \".\" ]; then for d in \"$HOME/Desktop\"/*.desktop; do [ -f \"$d\" ] && grep -qiE \"^Exec=(.*[/ ])?$EXEC_BASE( |%%|$)\" \"$d\" 2>/dev/null && rm -f \"$d\"; done; fi; "
+             "sync; xfdesktop --reload 2>/dev/null; touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; echo \"Done.\"; sleep 1' &",
              entry->name, entry->name, entry->pkg, entry->exec, entry->name);
     system(cmd);
     refresh_ui();
@@ -116,104 +123,39 @@ void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
 
 void on_action_clicked(GtkWidget *widget, gpointer data) {
     AppEntry *entry = (AppEntry*)data;
-    char cmd[16384];
-    char clean_icon[128];
-    strncpy(clean_icon, entry->icon, 127); clean_icon[127] = '\0';
-    char *dot = strrchr(clean_icon, '.');
-    if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) *dot = '\0';
-
+    char cmd[16384]; char clean_icon[128]; strncpy(clean_icon, entry->icon, 127); clean_icon[127] = '\0';
+    char *dot = strrchr(clean_icon, '.'); if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) *dot = '\0';
     snprintf(cmd, sizeof(cmd),
              "DISPLAY=:1 xfce4-terminal --title \"Installing %s\" -x bash -c ' "
-             "echo \"Installing %s...\"; "
-             "REPO_URL=\"https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/main/tor/downloads/%s.sh\"; "
+             "echo \"Installing %s...\"; REPO_URL=\"https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/main/tor/downloads/%s.sh\"; "
              "INSTALLER_TMP=\"$HOME/.cache/termux-pro-install\"; mkdir -p \"$INSTALLER_TMP\"; "
-             "if curl -s -f -I \"$REPO_URL\" >/dev/null; then "
-             "  curl -L \"$REPO_URL\" -o \"$INSTALLER_TMP/installer.sh\" && bash \"$INSTALLER_TMP/installer.sh\" \"%s\" \"%s\" \"%s\"; "
-             "  RET=$?; "
-             "  [ -f \"$INSTALLER_TMP/.skip_shortcut\" ] && { rm -f \"$INSTALLER_TMP/.skip_shortcut\"; touch \"$INSTALLER_TMP/.refresh_ui\"; exit 0; }; "
-             "elif echo \"%s\" | grep -q \" \"; then %s; RET=$?; "
-             "else pkg install -y %s; RET=$?; fi; "
-             "if [ $RET -eq 0 ]; then "
-             "  echo \"Creating Shortcut...\"; "
-             "  CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"; "
-             "  EXEC_PATH=\"%s\"; [ ! -f \"$EXEC_PATH\" ] && EXEC_PATH=$(command -v \"%s\"); "
-             "  [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"%s\"; "
-             "  EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1); "
-             "  ([ -z \"$EXEC_BASE\" ] || [ \"$EXEC_BASE\" = \".\" ]) && EXEC_BASE=\"%s\"; "
-             "  pick_native() { "
-             "    local d bn; "
-             "    for d in \"$PREFIX/share/applications\"/*.desktop \"$HOME/.local/share/applications\"/*.desktop; do "
-             "      [ -f \"$d\" ] || continue; bn=$(basename \"$d\" .desktop); "
-             "      if [ \"$bn\" = \"$EXEC_BASE\" ] || [ \"$bn\" = \"%s\" ] || [ \"$bn\" = \"%s\" ] || grep -qiE \"^Name=%s$\" \"$d\" 2>/dev/null; then NATIVE_DESKTOP=\"$d\"; return; fi; "
-             "    done; "
-             "  }; pick_native; "
-             "  RESOLVED_ICON=\"\"; "
-             "  find_icon() { "
-             "    local name=\"$1\"; [ -z \"$name\" ] && return; [ -f \"$name\" ] && RESOLVED_ICON=\"$name\" && return; "
-             "    local found=$(find \"$PREFIX/share/icons/hicolor/scalable/apps\" \"$PREFIX/share/icons/Papirus/scalable/apps\" \"$PREFIX/share/icons/hicolor/128x128/apps\" \"$PREFIX/share/icons\" -name \"$name.png\" -o -name \"$name.svg\" 2>/dev/null | head -n 1); "
-             "    RESOLVED_ICON=\"${found:-$name}\"; "
-             "  }; "
-             "  if [ -n \"$NATIVE_DESKTOP\" ]; then "
-             "    FILE=\"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"; rm -f \"$FILE\"; "
-             "    cp \"$NATIVE_DESKTOP\" \"$FILE\"; [ \"$FILE\" != \"$CATALOG_FILE\" ] && rm -f \"$CATALOG_FILE\"; "
-             "    NATIVE_ICON=$(grep \"^Icon=\" \"$FILE\" | cut -d= -f2 | head -1); "
-             "    find_icon \"${NATIVE_ICON:-%s}\"; [ \"$RESOLVED_ICON\" = \"$NATIVE_ICON\" ] && find_icon \"$EXEC_BASE\"; "
-             "    sed -i \"s|^Icon=.*|Icon=$RESOLVED_ICON|\" \"$FILE\" || echo \"Icon=$RESOLVED_ICON\" >> \"$FILE\"; "
-             "    if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then sed -i 's|^Exec=.*|Exec=vlc --wrapper-2.0 %U|' \"$FILE\"; fi; "
-             "  else "
-             "    FILE=\"$CATALOG_FILE\"; rm -f \"$FILE\"; "
-             "    EXTRA_ENV=\"QT_QPA_PLATFORM=xcb QT_X11_NO_MITSHM=1\"; "
-             "    [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_ENV=\"$EXTRA_ENV --no-sandbox\"; "
-             "    if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then EXEC_CMD=\"$EXEC_PATH --wrapper-2.0\"; else "
-             "    [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXTRA_ENV $EXEC_PATH\\\"\" || EXEC_CMD=\"dbus-launch $EXTRA_ENV $EXEC_PATH\"; fi; "
-             "    find_icon \"%s\"; [ \"$RESOLVED_ICON\" = \"%s\" ] && find_icon \"$EXEC_BASE\"; "
-             "    [ \"$RESOLVED_ICON\" = \"$EXEC_BASE\" ] && RESOLVED_ICON=\"utilities-terminal\"; "
-             "    printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=false\\nCategories=%s;\\n\" > \"$FILE\"; "
-             "  fi; "
-             "  chmod 755 \"$FILE\"; sync; xfdesktop --reload 2>/dev/null; "
-             "fi; "
-             "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; "
-             "if [ $RET -eq 0 ]; then echo \"Done.\"; sleep 1; "
-             "else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi' &",
-             entry->name, entry->name, entry->pkg, entry->pkg, entry->name, entry->exec,
-             entry->pkg, entry->pkg, entry->pkg, entry->name,
-             entry->exec, entry->exec, entry->exec, entry->exec,
-             entry->exec, entry->name, entry->name, clean_icon,
-             entry->is_gui, clean_icon, clean_icon, entry->name, entry->category);
+             "if curl -s -f -I \"$REPO_URL\" >/dev/null; then curl -L \"$REPO_URL\" -o \"$INSTALLER_TMP/installer.sh\" && bash \"$INSTALLER_TMP/installer.sh\" \"%s\" \"%s\" \"%s\"; RET=$?; "
+             "[ -f \"$INSTALLER_TMP/.skip_shortcut\" ] && { rm -f \"$INSTALLER_TMP/.skip_shortcut\"; touch \"$INSTALLER_TMP/.refresh_ui\"; exit 0; }; "
+             "elif echo \"%s\" | grep -q \" \"; then %s; RET=$?; else pkg install -y %s; RET=$?; fi; "
+             "if [ $RET -eq 0 ]; then echo \"Creating Shortcut...\"; CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"; EXEC_PATH=\"%s\"; [ ! -f \"$EXEC_PATH\" ] && EXEC_PATH=$(command -v \"%s\"); [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"%s\"; EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1); ([ -z \"$EXEC_BASE\" ] || [ \"$EXEC_BASE\" = \".\" ]) && EXEC_BASE=\"%s\"; "
+             "pick_native() { local d bn; for d in \"$PREFIX/share/applications\"/*.desktop \"$HOME/.local/share/applications\"/*.desktop; do [ -f \"$d\" ] || continue; bn=$(basename \"$d\" .desktop); if [ \"$bn\" = \"$EXEC_BASE\" ] || [ \"$bn\" = \"%s\" ] || [ \"$bn\" = \"%s\" ] || grep -qiE \"^Name=%s$\" \"$d\" 2>/dev/null; then NATIVE_DESKTOP=\"$d\"; return; fi; done; }; pick_native; "
+             "RESOLVED_ICON=\"\"; find_icon() { local name=\"$1\"; [ -z \"$name\" ] && return; [ -f \"$name\" ] && RESOLVED_ICON=\"$name\" && return; local found=$(find \"$PREFIX/share/icons/hicolor/scalable/apps\" \"$PREFIX/share/icons/Papirus/scalable/apps\" \"$PREFIX/share/icons/hicolor/128x128/apps\" \"$PREFIX/share/icons\" -name \"$name.png\" -o -name \"$name.svg\" 2>/dev/null | head -n 1); RESOLVED_ICON=\"${found:-$name}\"; }; "
+             "if [ -n \"$NATIVE_DESKTOP\" ]; then FILE=\"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"; rm -f \"$FILE\"; cp \"$NATIVE_DESKTOP\" \"$FILE\"; [ \"$FILE\" != \"$CATALOG_FILE\" ] && rm -f \"$CATALOG_FILE\"; NATIVE_ICON=$(grep \"^Icon=\" \"$FILE\" | cut -d= -f2 | head -1); find_icon \"${NATIVE_ICON:-%s}\"; [ \"$RESOLVED_ICON\" = \"$NATIVE_ICON\" ] && find_icon \"$EXEC_BASE\"; sed -i \"s|^Icon=.*|Icon=$RESOLVED_ICON|\" \"$FILE\" || echo \"Icon=$RESOLVED_ICON\" >> \"$FILE\"; if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then sed -i 's|^Exec=.*|Exec=vlc --wrapper-2.0 %%U|' \"$FILE\"; fi; "
+             "else FILE=\"$CATALOG_FILE\"; rm -f \"$FILE\"; EXTRA_ENV=\"QT_QPA_PLATFORM=xcb QT_X11_NO_MITSHM=1\"; [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_ENV=\"$EXTRA_ENV --no-sandbox\"; if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then EXEC_CMD=\"$EXEC_PATH --wrapper-2.0\"; else [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXTRA_ENV $EXEC_PATH\\\"\" || EXEC_CMD=\"dbus-launch $EXTRA_ENV $EXEC_PATH\"; fi; find_icon \"%s\"; [ \"$RESOLVED_ICON\" = \"%s\" ] && find_icon \"$EXEC_BASE\"; [ \"$RESOLVED_ICON\" = \"$EXEC_BASE\" ] && RESOLVED_ICON=\"utilities-terminal\"; printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=false\\nCategories=%s;\\n\" > \"$FILE\"; fi; "
+             "chmod 755 \"$FILE\"; sync; xfdesktop --reload 2>/dev/null; fi; "
+             "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; if [ $RET -eq 0 ]; then echo \"Done.\"; sleep 1; else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi' &",
+             entry->name, entry->name, entry->pkg, entry->pkg, entry->name, entry->exec, entry->pkg, entry->pkg, entry->pkg, entry->name, entry->exec, entry->exec, entry->exec, entry->exec, entry->exec, entry->name, entry->name, entry->name, entry->is_gui, clean_icon, clean_icon, entry->name, entry->category);
     system(cmd);
     refresh_ui();
 }
 
-void on_search_changed(GtkEditable *editable, gpointer user_data) {
-    const char *text = gtk_entry_get_text(GTK_ENTRY(editable));
-    if (!catalog) return;
-    for (int i = 0; i < catalog_size; i++) {
-        if (strlen(text) == 0 || strcasestr(catalog[i].name, text) || strcasestr(catalog[i].category, text))
-            gtk_widget_show(catalog[i].row_widget);
-        else
-            gtk_widget_hide(catalog[i].row_widget);
-    }
-}
+void on_search_changed(GtkEditable *editable, gpointer user_data) { update_filter(); }
 
 void populate_list() {
     for (int j = 0; j < catalog_size; j++) {
-        if (strcasestr(catalog[j].pkg, "python") || strcasestr(catalog[j].pkg, "node") || strcasestr(catalog[j].pkg, "git") ||
-            strcasestr(catalog[j].pkg, "vim") || strcasestr(catalog[j].pkg, "clang") || strcasestr(catalog[j].pkg, "pkg-config")) continue;
         GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
         catalog[j].row_widget = row;
         gtk_container_set_border_width(GTK_CONTAINER(row), 12);
         char icon_name[128]; strncpy(icon_name, catalog[j].icon, 127); icon_name[127] = '\0';
-        char *dot = strrchr(icon_name, '.');
-        if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) *dot = '\0';
-        GtkIconTheme *theme = gtk_icon_theme_get_default();
-        GtkWidget *icon = NULL;
+        char *dot = strrchr(icon_name, '.'); if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) *dot = '\0';
+        GtkIconTheme *theme = gtk_icon_theme_get_default(); GtkWidget *icon = NULL;
         const char *candidates[] = { icon_name, catalog[j].exec, catalog[j].pkg, NULL };
-        for (int k = 0; candidates[k] != NULL; k++) {
-            if (strlen(candidates[k]) > 0 && gtk_icon_theme_has_icon(theme, candidates[k])) {
-                icon = gtk_image_new_from_icon_name(candidates[k], GTK_ICON_SIZE_DIALOG);
-                break;
-            }
-        }
+        for (int k = 0; candidates[k] != NULL; k++) { if (strlen(candidates[k]) > 0 && gtk_icon_theme_has_icon(theme, candidates[k])) { icon = gtk_image_new_from_icon_name(candidates[k], GTK_ICON_SIZE_DIALOG); break; } }
         if (!icon) icon = gtk_image_new_from_icon_name(catalog[j].is_gui ? "application-x-executable" : "utilities-terminal", GTK_ICON_SIZE_DIALOG);
         gtk_image_set_pixel_size(GTK_IMAGE(icon), 48);
         GtkWidget *details = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -240,33 +182,31 @@ void populate_list() {
         gtk_list_box_insert(GTK_LIST_BOX(widgets.list_box), row, -1);
     }
     gtk_widget_show_all(widgets.list_box);
+    update_filter();
     refresh_ui();
 }
 
 static gboolean on_load_finished(gpointer data) {
     int success = GPOINTER_TO_INT(data);
     gtk_spinner_stop(GTK_SPINNER(widgets.spinner));
-    if (success && catalog_size > 0) {
-        populate_list();
-        gtk_stack_set_visible_child_name(GTK_STACK(widgets.stack), "catalog");
-    } else {
-        gtk_label_set_text(GTK_LABEL(widgets.loading_label), "Connection Error.\nPlease verify xfce-app-store repo branch.");
-    }
+    if (success && catalog_size > 0) { populate_list(); gtk_stack_set_visible_child_name(GTK_STACK(widgets.stack), "catalog"); }
+    else { gtk_label_set_text(GTK_LABEL(widgets.loading_label), "Connection Error.\nPlease verify xfce-app-store repo branch."); }
     return FALSE;
 }
 
 static void* load_catalog_thread(void* data) {
     system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro");
-    char sync_cmd[1024];
-    snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s %s", LOCAL_PATH, LIST_URL_MAIN);
+    unlink(LOCAL_PATH); // Köhnə keş faylını dərhal təmizləyirik!
+    char sync_cmd[2048];
+    long timestamp = (long)time(NULL); // Keş qırıcı (Cache Buster)
+    snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MAIN, timestamp);
     if (system(sync_cmd) != 0) {
-        snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s %s", LOCAL_PATH, LIST_URL_MASTER);
+        snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MASTER, timestamp);
         system(sync_cmd);
     }
     FILE *fp = fopen(LOCAL_PATH, "r");
     if (fp) {
-        char line[1024];
-        while (fgets(line, sizeof(line), fp)) if(strlen(line) > 5) catalog_size++;
+        char line[1024]; while (fgets(line, sizeof(line), fp)) if(strlen(line) > 5) catalog_size++;
         rewind(fp);
         if (catalog_size > 0) {
             catalog = calloc(catalog_size, sizeof(AppEntry));
@@ -287,8 +227,7 @@ static void* load_catalog_thread(void* data) {
                 }
                 i++;
             }
-            fclose(fp);
-            g_idle_add(on_load_finished, GINT_TO_POINTER(1));
+            fclose(fp); g_idle_add(on_load_finished, GINT_TO_POINTER(1));
         } else { fclose(fp); g_idle_add(on_load_finished, GINT_TO_POINTER(0)); }
     } else { g_idle_add(on_load_finished, GINT_TO_POINTER(0)); }
     return NULL;
@@ -315,11 +254,12 @@ int main(int argc, char *argv[]) {
     widgets.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(widgets.window), "Termux App Store");
     gtk_window_set_icon_name(GTK_WINDOW(widgets.window), "software-center");
-    gtk_window_set_default_size(GTK_WINDOW(widgets.window), 800, 550);
+    gtk_window_set_default_size(GTK_WINDOW(widgets.window), 850, 600);
     gtk_window_set_position(GTK_WINDOW(widgets.window), GTK_WIN_POS_CENTER);
     g_signal_connect(widgets.window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     GtkWidget *main_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(widgets.window), main_vbox);
+
     GtkWidget *search_bar = gtk_search_bar_new();
     GtkWidget *search_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     widgets.search_entry = gtk_search_entry_new();
@@ -332,6 +272,18 @@ int main(int argc, char *argv[]) {
     gtk_search_bar_set_search_mode(GTK_SEARCH_BAR(search_bar), TRUE);
     gtk_box_pack_start(GTK_BOX(main_vbox), search_bar, FALSE, FALSE, 5);
     g_signal_connect(widgets.search_entry, "changed", G_CALLBACK(on_search_changed), NULL);
+
+    widgets.cat_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_container_set_border_width(GTK_CONTAINER(widgets.cat_box), 10);
+    gtk_box_pack_start(GTK_BOX(main_vbox), widgets.cat_box, FALSE, FALSE, 0);
+    const char *cats[] = {"ALL", "SOCIAL", "CYBER", "INTERNET", "TOOLS", "DEV", "GRAPHICS", "OFFICE", "AI"};
+    for (int i=0; i<9; i++) {
+        GtkWidget *btn = gtk_button_new_with_label(cats[i]);
+        if (i == 0) gtk_style_context_add_class(gtk_widget_get_style_context(btn), "suggested-action");
+        g_signal_connect(btn, "clicked", G_CALLBACK(on_category_clicked), (gpointer)cats[i]);
+        gtk_box_pack_start(GTK_BOX(widgets.cat_box), btn, TRUE, TRUE, 0);
+    }
+
     widgets.stack = gtk_stack_new();
     gtk_stack_set_transition_type(GTK_STACK(widgets.stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
     gtk_box_pack_start(GTK_BOX(main_vbox), widgets.stack, TRUE, TRUE, 0);
