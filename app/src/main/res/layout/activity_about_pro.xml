@@ -184,7 +184,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp"
-            android:text="Developed with ❤️ by gulbalamesiyev"
+            android:text="Developed by Gulbala Masiyev"
             android:textColor="@color/pro_text_secondary"
             android:textSize="12sp" />
 

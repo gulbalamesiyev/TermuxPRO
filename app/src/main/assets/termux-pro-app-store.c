@@ -153,7 +153,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
              "    local found=$(find \"$PREFIX/share/icons/hicolor/scalable/apps\" \"$PREFIX/share/icons/Papirus/scalable/apps\" \"$PREFIX/share/icons/hicolor/128x128/apps\" \"$PREFIX/share/icons\" -name \"$name.png\" -o -name \"$name.svg\" 2>/dev/null | head -n 1); "
              "    RESOLVED_ICON=\"${found:-$name}\"; "
              "  }; "
-             "             "  if [ -n \"$NATIVE_DESKTOP\" ]; then "
+             "  if [ -n \"$NATIVE_DESKTOP\" ]; then "
              "    FILE=\"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"; rm -f \"$FILE\"; "
              "    cp \"$NATIVE_DESKTOP\" \"$FILE\"; [ \"$FILE\" != \"$CATALOG_FILE\" ] && rm -f \"$CATALOG_FILE\"; "
              "    NATIVE_ICON=$(grep \"^Icon=\" \"$FILE\" | cut -d= -f2 | head -1); "

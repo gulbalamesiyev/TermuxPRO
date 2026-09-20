@@ -140,71 +140,144 @@ public final class DesktopResourceManager {
             sHandler.post(sProgressTicker);
         }
 
+        String prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
         String logFile = getLogFilePath(handle);
         String logDirectory = TermuxConstants.TERMUX_VAR_PREFIX_DIR_PATH + "/log";
-        String installScript = "\n" +
-            "mkdir -p " + shellQuote(logDirectory) + ";\n" +
-            "export TERM=xterm-256color;\n" +
-            "set -o pipefail 2>/dev/null || true;\n" +
-            "LOG_FILE=" + shellQuote(logFile) + ";\n" +
-            "{\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Preparing environment...\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:INITIALIZING\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:2\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Updating package lists...\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:UPDATING\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:5\\n\";\n" +
-            "  apt update;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:10\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Installing x11, tur and glibc repos...\\n\";\n" +
-            "  pkg install -y x11-repo tur-repo glibc-repo || pkg install -y x11-repo;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:15\\n\";\n" +
-            "  apt update;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:20\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE Desktop...\\n\";\n" +
-            "  pkg install -y xkeyboard-config dbus gvfs xfce4 inotify-tools xdg-utils || exit 21;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:45\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading terminal and utilities...\\n\";\n" +
-            "  pkg install -y xfce4-terminal thunar libxres gtk3 coreutils || exit 21;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:65\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Downloading development tools...\\n\";\n" +
-            "  pkg install -y clang pkg-config papirus-icon-theme python nodejs git vim || exit 21;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:85\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:CONFIGURING\\n\";\n" +
-            "  gtk-update-icon-cache -f \"$PREFIX/share/icons/Papirus\" 2>/dev/null;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:88\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Configuring applications...\\n\";\n" +
-            "  sync;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:92\\n\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_LOG:Compiling native App Store...\\n\";\n" +
-            "  clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" $(pkg-config --cflags --libs gtk+-3.0) -lpthread || exit 22;\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:98\\n\";\n" +
-            "  chmod 755 \"$PREFIX/bin/termux-pro-app-store\";\n" +
-            "  mkdir -p \"$PREFIX/share/applications\";\n" +
-            "  ICON_PATH=$(find \"$PREFIX/share/icons/Papirus\" -name \"mintinstall.svg\" -o -name \"software-center.svg\" -o -name \"system-software-install.svg\" | head -n 1);\n" +
-            "  [ -z \"$ICON_PATH\" ] && ICON_PATH=\"system-software-install\";\n" +
-            "  printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=%%s/bin/termux-pro-app-store\\nIcon=%%s\\nTerminal=false\\n' \"$PREFIX\" \"$ICON_PATH\" > \"$PREFIX/share/applications/termux-pro-app-store.desktop\";\n" +
-            "  chmod 755 \"$PREFIX/share/applications/termux-pro-app-store.desktop\";\n" +
-            "  sync;\n" +
-            "} 2>&1 | tee -a \"$LOG_FILE\";\n" +
-            "pipeline_status=${PIPESTATUS[0]};\n" +
-            "if [ \"$pipeline_status\" -eq 0 ]; then\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PHASE:FINALIZING\\n\" | tee -a \"$LOG_FILE\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_PROGRESS:100\\n\" | tee -a \"$LOG_FILE\";\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED\\n\" | tee -a \"$LOG_FILE\";\n" +
-            "else\n" +
-            "  printf \"TERMUX_PRO_DESKTOP_INSTALL_FAILED:Installation pipeline failed (exit %s)\\n\" \"$pipeline_status\" | tee -a \"$LOG_FILE\";\n" +
-            "fi\n";
+        String scriptPath = prefix + "/tmp/termux-pro-desktop-install-" + handle + ".sh";
+        String installScript = buildInstallScript(prefix, logFile, logDirectory);
+
+        try {
+            new File(logDirectory).mkdirs();
+            new File(prefix + "/tmp").mkdirs();
+            Files.write(Paths.get(scriptPath), installScript.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Failed to write install script", e);
+            failInstall("Could not write install script.");
+            return;
+        }
 
         sHandler.postDelayed(() -> {
             if (terminal.mHandle.equals(DesktopNavigationState.getActiveInstallSessionHandle())
                     && handle.equals(DesktopNavigationState.getActiveInstallLogHandle())) {
-                terminal.write("bash -lc " + shellQuote(installScript) + "\n");
+                terminal.write("bash " + shellQuote(scriptPath) + "\n");
                 sHandler.removeCallbacks(sFallbackRunnable);
                 sHandler.postDelayed(sFallbackRunnable, FALLBACK_TIMEOUT_MS);
             }
         }, 1500);
+    }
+
+    /**
+     * Same package set as before; installs one package at a time with retries so a
+     * single failure cannot abort the rest of the desktop resources.
+     */
+    private static String buildInstallScript(String prefix, String logFile, String logDirectory) {
+        return ""
+            + "export PREFIX=" + shellQuote(prefix) + "\n"
+            + "export PATH=\"$PREFIX/bin:$PATH\"\n"
+            + "export DEBIAN_FRONTEND=noninteractive\n"
+            + "export TERM=xterm-256color\n"
+            + "mkdir -p " + shellQuote(logDirectory) + " \"$PREFIX/tmp\"\n"
+            + "LOG_FILE=" + shellQuote(logFile) + "\n"
+            + "touch \"$LOG_FILE\"\n"
+            + "exec > >(tee -a \"$LOG_FILE\") 2>&1\n"
+            + "set +e\n"
+            + "say() { printf '%s\\n' \"$1\"; }\n"
+            + "verify_pkg() { if ! command -v \"$1\" >/dev/null 2>&1; then say \"VERIFICATION_FAILED:$2\"; exit 25; fi; }\n"
+            + "verify_dir() { if [ ! -d \"$1\" ]; then say \"VERIFICATION_FAILED:$2\"; exit 26; fi; }\n"
+            + "install_one() {\n"
+            + "  _pkg=\"$1\"\n"
+            + "  _try=1\n"
+            + "  while [ \"$_try\" -le 3 ]; do\n"
+            + "    say \"TERMUX_PRO_DESKTOP_LOG:Installing ${_pkg} (${_try}/3)...\"\n"
+            + "    if pkg install -y \"$_pkg\"; then return 0; fi\n"
+            + "    _try=$((_try + 1))\n"
+            + "    sleep 1\n"
+            + "    apt update || true\n"
+            + "  done\n"
+            + "  say \"TERMUX_PRO_DESKTOP_LOG:WARN: failed to install ${_pkg}\"\n"
+            + "  return 1\n"
+            + "}\n"
+            + "install_list() {\n"
+            + "  for _pkg in \"$@\"; do install_one \"$_pkg\"; done\n"
+            + "}\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Preparing environment...\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:INITIALIZING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:2\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Updating package lists...\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:UPDATING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:5\"\n"
+            + "apt update || { sleep 2; apt update || true; }\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:10\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Installing x11, tur and glibc repos...\"\n"
+            + "install_list x11-repo tur-repo glibc-repo\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:15\"\n"
+            + "apt update || true\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:20\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE Desktop...\"\n"
+            + "install_list xkeyboard-config dbus gvfs xfce4 inotify-tools xdg-utils\n"
+            + "verify_pkg xfce4-session \"XFCE Core\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:45\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading terminal and utilities...\"\n"
+            + "install_list xfce4-terminal thunar libxres gtk3 coreutils\n"
+            + "verify_pkg xfce4-terminal \"Terminal App\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:65\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading development tools and icons...\"\n"
+            + "install_list clang pkg-config papirus-icon-theme python nodejs git vim\n"
+            + "verify_dir \"$PREFIX/share/icons/Papirus\" \"Icon Pack\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:85\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:CONFIGURING\"\n"
+            + "gtk-update-icon-cache -f \"$PREFIX/share/icons/Papirus\" >/dev/null 2>&1 || true\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:88\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Configuring applications...\"\n"
+            + "sync || true\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:92\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Compiling native App Store...\"\n"
+            + "_compile_ok=0\n"
+            + "_c=1\n"
+            + "while [ \"$_c\" -le 2 ]; do\n"
+            + "  if clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" $(pkg-config --cflags --libs gtk+-3.0) -lpthread; then\n"
+            + "    _compile_ok=1\n"
+            + "    break\n"
+            + "  fi\n"
+            + "  _c=$((_c + 1))\n"
+            + "  install_one gtk3\n"
+            + "  install_one pkg-config\n"
+            + "done\n"
+            + "if [ \"$_compile_ok\" -ne 1 ]; then say \"TERMUX_PRO_DESKTOP_INSTALL_FAILED:App Store compile failed\"; exit 22; fi\n"
+            + "verify_pkg termux-pro-app-store \"Native App Store\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:98\"\n"
+            + "chmod 755 \"$PREFIX/bin/termux-pro-app-store\"\n"
+            + "mkdir -p \"$PREFIX/share/applications\"\n"
+            + "# Requirement: Professional Blue Circular icon with absolute path for zero-fail display\n"
+            + "ICON_PATH=\"$PREFIX/share/icons/Papirus/scalable/apps/software-center.svg\"\n"
+            + "[ ! -f \"$ICON_PATH\" ] && ICON_PATH=\"software-center\"\n"
+            + "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=%s/bin/termux-pro-app-store\\nIcon=%s\\nTerminal=false\\nCategories=System;\\n' \"$PREFIX\" \"$ICON_PATH\" > \"$PREFIX/share/applications/termux-pro-app-store.desktop\"\n"
+            + "chmod 755 \"$PREFIX/share/applications/termux-pro-app-store.desktop\"\n"
+            + "command -v gio >/dev/null && gio set -t string \"$PREFIX/share/applications/termux-pro-app-store.desktop\" metadata::xfce-exe-checksum \"$(sha256sum \"$PREFIX/share/applications/termux-pro-app-store.desktop\" | cut -d' ' -f1)\" 2>/dev/null\n"
+            + "export HOME=\"${HOME:-/data/data/com.termux/files/home}\"\n"
+            + "mkdir -p \"$HOME/Desktop\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Pinning application icons to Desktop...\"\n"
+            + "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=File Manager\\nComment=Browse files and folders\\nExec=thunar\\nIcon=org.xfce.thunar\\nTerminal=false\\nStartupNotify=true\\nOnlyShowIn=XFCE;\\nCategories=XFCE;GTK;Settings;DesktopSettings;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;\\n' > \"$PREFIX/share/applications/termux-pro-file-manager.desktop\"\n"
+            + "chmod 644 \"$PREFIX/share/applications/termux-pro-file-manager.desktop\"\n"
+            + "rm -f \"$HOME/Desktop/thunar.desktop\" \"$HOME/Desktop/org.xfce.thunar.desktop\" \"$HOME/Desktop/Thunar.desktop\" \"$HOME/Desktop/org.xfce.Thunar.desktop\"\n"
+            + "for _src in \"$PREFIX/share/applications\"/*.desktop; do\n"
+            + "  [ -f \"$_src\" ] || continue\n"
+            + "  grep -qiE '^NoDisplay=true|^Hidden=true' \"$_src\" && continue\n"
+            + "  _bn=$(basename \"$_src\" .desktop)\n"
+            + "  _bnl=$(printf '%s' \"$_bn\" | tr '[:upper:]' '[:lower:]')\n"
+            + "  case \"$_bnl\" in\n"
+            + "    thunar|org.xfce.thunar|*file-manager*) continue ;;\n"
+            + "    *app-store*|xfce4-terminal|org.xfce.terminal|org.xfce.terminalemulator|*appfinder|*settings.manager|*settings-manager|*session-logout|*mousepad|*screenshooter|*taskmanager|*ristretto|xfce4-run|org.xfce.run) ;;\n"
+            + "    *) continue ;;\n"
+            + "  esac\n"
+            + "  cp -f \"$_src\" \"$HOME/Desktop/$_bn.desktop\"\n"
+            + "  chmod 755 \"$HOME/Desktop/$_bn.desktop\"\n"
+            + "done\n"
+            + "sync || true\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:FINALIZING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:100\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED\"\n";
     }
 
     public static void onSessionTextChanged(TerminalSession session) {
@@ -249,6 +322,9 @@ public final class DesktopResourceManager {
                         return;
                     } else if (lineContent.contains("TERMUX_PRO_DESKTOP_INSTALL_FAILED:")) {
                         failInstall(lineContent.substring(lineContent.indexOf("FAILED:") + 7));
+                        return;
+                    } else if (lineContent.contains("VERIFICATION_FAILED:")) {
+                        failInstall("Critical component missing: " + lineContent.substring(lineContent.indexOf("FAILED:") + 7));
                         return;
                     } else if (lineContent.contains("TERMUX_PRO_DESKTOP_PHASE:")) {
                         String phase = lineContent.substring(lineContent.indexOf("PHASE:") + 6);
@@ -376,7 +452,7 @@ public final class DesktopResourceManager {
                     String appsDir = PREFIX + "/share/applications";
                     String desktopFile = appsDir + "/termux-pro-app-store.desktop";
                     
-                    // Requirement: Use a highly professional Blue App Store icon (Papirus Software Center)
+                    // Requirement: Use a highly professional Blue App Store icon (Circular blue with download feel)
                     String desktopIconCmd = "mkdir -p " + appsDir + " && " +
                         "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=App Store\\nExec=" + binPath + "\\nIcon=software-center\\nTerminal=false\\nCategories=System;\\n' > " + desktopFile + " && " +
                         "chmod 755 " + desktopFile + " && " +

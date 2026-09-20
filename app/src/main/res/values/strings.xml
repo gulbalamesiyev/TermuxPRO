@@ -14,7 +14,7 @@
 <resources>
 
     <string name="application_name">Termux</string>
-    <string name="application_name_no_pro">Termux</string>
+    <string name="application_name_no_pro">Termux PRO</string>
     <string name="shared_user_label">&TERMUX_APP_NAME; user</string>
     <string name="open_session_center">Open Session Center</string>
     <string name="session_prompt">&gt; _</string>
@@ -27,6 +27,7 @@
     <string name="termux_pro">Termux</string>
     <string name="active_sessions">ACTIVE SESSIONS</string>
     <string name="new_session">+ NEW SESSION</string>
+    <string name="repair_desktop">REPAIR DESKTOP</string>
     <string name="starting_x11">DESKTOP</string>
     <string name="download_resources">DESKTOP</string>
     <string name="start_desktop">DESKTOP</string>
