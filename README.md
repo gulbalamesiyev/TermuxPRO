@@ -77,4 +77,4 @@ This project is licensed under the **GPLv3 License** - see the [LICENSE](LICENSE
 - **Report Bugs**: [Open an Issue](https://github.com/gulbalamesiyev/termux-pro/issues)
 
 ---
-Developed with ❤️ by **[gulbalamesiyev](https://github.com/gulbalamesiyev)**.
+Developed with  by **[Gulbala Masiyev](https://github.com/gulbalamesiyev)**.
