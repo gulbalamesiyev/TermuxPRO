@@ -7,8 +7,6 @@ import com.termux.app.TermuxService;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.x11.DesktopNavigationState;
-
-import android.os.Handler;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.util.Log;

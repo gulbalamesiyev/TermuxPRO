@@ -6,7 +6,6 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.terminal.TerminalSession;
 import com.termux.x11.DesktopNavigationState;

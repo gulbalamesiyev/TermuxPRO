@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -225,7 +224,7 @@ public final class SessionCenterController {
         new AlertDialog.Builder(mActivity)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     TermuxService service = mActivity.getTermuxService();
                     if (service == null) return;
 
@@ -249,7 +248,7 @@ public final class SessionCenterController {
                         mActivity.termuxSessionListNotifyUpdated();
                     }
                 })
-                .setNegativeButton(android.R.string.no, null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
