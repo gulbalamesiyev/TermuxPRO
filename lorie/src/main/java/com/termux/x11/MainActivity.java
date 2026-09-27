@@ -10,6 +10,7 @@ import static com.termux.x11.LoriePreferences.ACTION_PREFERENCES_CHANGED;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AppOpsManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -197,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
     private static String sPendingLaunchToken = null;
 
     /** Bounded wait for the bridge to become READY before starting a fresh renderer. */
-    private static final int MAX_READY_RETRIES = 8;
+    private static final int MAX_READY_RETRIES = 3;
     private static int sReadyRetryCount = 0;
 
     public static void launchOrReuse(Context context, Bundle connectionBundle, String launchToken) {
@@ -226,11 +227,11 @@ public class MainActivity extends AppCompatActivity {
             if (!hasLiveRenderer
                 && DesktopNavigationState.getDesktopBootState() != DesktopNavigationState.DesktopBootState.READY
                 && ++sReadyRetryCount < MAX_READY_RETRIES) {
-                Log.i("MainActivity", "Bridge is not ready yet; retrying renderer foregrounding in 250ms ("
+                Log.i("MainActivity", "Bridge is not ready yet; retrying renderer foregrounding in 50ms ("
                     + sReadyRetryCount + "/" + MAX_READY_RETRIES + ")");
                 DesktopNavigationState.setDesktopLaunchPending(true);
                 sPendingLaunchRunnable = thisRunnable();
-                sLaunchHandler.postDelayed(sPendingLaunchRunnable, 250);
+                sLaunchHandler.postDelayed(sPendingLaunchRunnable, 50);
                 return;
             }
             sReadyRetryCount = 0;
@@ -263,6 +264,9 @@ public class MainActivity extends AppCompatActivity {
             
             try {
                 context.startActivity(intent);
+                if (context instanceof Activity) {
+                    ((Activity) context).overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
             } catch (Exception e) {
                 Log.e("MainActivity", "Failed to start renderer activity", e);
             } finally {
@@ -588,7 +592,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("com.termux.app.extra.SHOW_SESSION_CENTER_WITHOUT_ANIMATION", true);
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
-        overridePendingTransition(0, 0);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     @Override

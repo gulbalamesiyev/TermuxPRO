@@ -114,7 +114,7 @@
             android:src="@drawable/ic_home_overlay"
             android:background="@drawable/home_overlay_bg"
             android:scaleType="center"
-            android:elevation="8dp"
+            android:elevation="12dp"
             android:clickable="true"
             android:focusable="true"
             android:contentDescription="@string/open_session_center"

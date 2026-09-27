@@ -1,0 +1,523 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "libxserver_os.a"
+		}
+	],
+	"backtrace" : 3,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"include",
+			"target_link_libraries",
+			"target_compile_options",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"recipes/xserver.cmake",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 100,
+				"parent" : 0
+			},
+			{
+				"file" : 0,
+				"parent" : 1
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 142,
+				"parent" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 144,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 145,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 143,
+				"parent" : 2
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -O2 -g -DNDEBUG -fPIC"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wpointer-arith"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wformat=2"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Werror=implicit"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Werror=return-type"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fno-strict-aliasing"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-unused-but-set-variable"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-unused-parameter"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-unused-variable"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-macro-redefined"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-std=gnu99"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DHAVE_DIX_CONFIG_H"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fvisibility=hidden"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fPIC"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-D_DEFAULT_SOURCE"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-D_BSD_SOURCE"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DHAS_FCHOWN"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DHAS_STICKY_DIR_BIT"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-D_PATH_TMP=getenv(\\\"TMPDIR\\\")?:\\\"/tmp\\\""
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DCLIENTIDS"
+				},
+				{
+					"fragment" : "-std=gnu11"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/.cxx/RelWithDebInfo/1f6q4v23/x86"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/.cxx/RelWithDebInfo/1f6q4v23/x86/xserver"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/lorie/shm"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/libxfont/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/pixman/pixman"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xorgproto/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/libxkbfile/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/Xext"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/Xi"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/composite"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/damageext"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/fb"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/mi"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/miext/damage"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/miext/shadow"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/miext/sync"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/dbe"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/dri3"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/present"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/randr"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/render"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/xfixes"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/glx"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/xserver/exa"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/libxdmcp/include"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/.cxx/RelWithDebInfo/1f6q4v23/x86/Xdmcp"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/libxau/include"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp/libtirpc/tirpc"
+				}
+			],
+			"language" : "C",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					3
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22
+			],
+			"sysroot" : 
+			{
+				"path" : "C:/Users/Laptop/AppData/Local/Android/Sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+			}
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 4,
+			"id" : "tirpc::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "md::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "Xdmcp::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "Xau::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "xserver_os::@6890427a1f51a3e7e1df",
+	"name" : "xserver_os",
+	"nameOnDisk" : "libxserver_os.a",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/WaitFor.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/access.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/auth.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/backtrace.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/client.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/connection.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/inputthread.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/io.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/mitauth.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/oscolor.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/osinit.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/ospoll.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/utils.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/xdmauth.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/xsha1.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/xstrans.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/xprintf.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/log.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/strlcpy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/busfault.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/timingsafe_memcmp.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/rpcauth.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "xserver/os/xdmcp.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

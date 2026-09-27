@@ -2,7 +2,7 @@
 
 <!DOCTYPE resources [
     <!ENTITY TERMUX_PACKAGE_NAME "com.termux">
-    <!ENTITY TERMUX_APP_NAME "Termux">
+    <!ENTITY TERMUX_APP_NAME "Termux PRO">
     <!ENTITY TERMUX_API_APP_NAME "Termux:API">
     <!ENTITY TERMUX_BOOT_APP_NAME "Termux:Boot">
     <!ENTITY TERMUX_FLOAT_APP_NAME "Termux:Float">
@@ -13,8 +13,10 @@
 
 <resources>
 
-    <string name="application_name">Termux</string>
+    <string name="application_name">Termux PRO</string>
     <string name="application_name_no_pro">Termux PRO</string>
+    <string name="application_name_no_pro_p1">Termux</string>
+    <string name="application_name_no_pro_p2">PRO</string>
     <string name="shared_user_label">&TERMUX_APP_NAME; user</string>
     <string name="open_session_center">Open Session Center</string>
     <string name="session_prompt">&gt; _</string>

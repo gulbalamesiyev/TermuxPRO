@@ -1,0 +1,375 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-RelWithDebInfo-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35
+					]
+				}
+			],
+			"name" : "RelWithDebInfo",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "lorie",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Xau::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xau-RelWithDebInfo-573db5e004d4d9be7063.json",
+					"name" : "Xau",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xdmcp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xdmcp-RelWithDebInfo-f9a80ae170bd8ad5e6fb.json",
+					"name" : "Xdmcp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xfont2::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xfont2-RelWithDebInfo-c4734ff2e661ab063822.json",
+					"name" : "Xfont2",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xlorie::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xlorie-RelWithDebInfo-2dc8e20e4d72c264a545.json",
+					"name" : "Xlorie",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "fontenc::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-fontenc-RelWithDebInfo-1f6ba8c2a76451f93d08.json",
+					"name" : "fontenc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "md::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-md-RelWithDebInfo-392285a797c6a4d1e43a.json",
+					"name" : "md",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pixman::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pixman-RelWithDebInfo-808de7581d5477ce94ab.json",
+					"name" : "pixman",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "tirpc::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-tirpc-RelWithDebInfo-cb181840e5eb5fa02b4f.json",
+					"name" : "tirpc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xkbcomp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xkbcomp-RelWithDebInfo-298ecdfadda6874bb801.json",
+					"name" : "xkbcomp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_composite::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_composite-RelWithDebInfo-a26eef53d6a3abd5a269.json",
+					"name" : "xserver_composite",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_damageext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_damageext-RelWithDebInfo-ddb95cad700a11ff2a7f.json",
+					"name" : "xserver_damageext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dbe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dbe-RelWithDebInfo-919f57c5b500e7183dba.json",
+					"name" : "xserver_dbe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dix::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dix-RelWithDebInfo-0ee4b19bf43ee05ac575.json",
+					"name" : "xserver_dix",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dri3::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dri3-RelWithDebInfo-1df9abf5b787742b8700.json",
+					"name" : "xserver_dri3",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_exa::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_exa-RelWithDebInfo-d7da5908364dc2d0f425.json",
+					"name" : "xserver_exa",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_fb::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_fb-RelWithDebInfo-c90c31e345513c3747ae.json",
+					"name" : "xserver_fb",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_glx::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_glx-RelWithDebInfo-61fcd32fe5e47b811e98.json",
+					"name" : "xserver_glx",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_glxvnd::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_glxvnd-RelWithDebInfo-d60fc53178712c9094e5.json",
+					"name" : "xserver_glxvnd",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_main::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_main-RelWithDebInfo-9e5136ee3f7678efad88.json",
+					"name" : "xserver_main",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_mi::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_mi-RelWithDebInfo-156685566d4bdfd76b99.json",
+					"name" : "xserver_mi",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_miext_damage::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_miext_damage-RelWithDebInfo-9041b829f9657195fcb5.json",
+					"name" : "xserver_miext_damage",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_miext_sync::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_miext_sync-RelWithDebInfo-354fa4c8ee20c00d3565.json",
+					"name" : "xserver_miext_sync",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_os::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_os-RelWithDebInfo-cba1ea9720dcc76a38e0.json",
+					"name" : "xserver_os",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_present::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_present-RelWithDebInfo-a83c3ebaad2e7f056f6c.json",
+					"name" : "xserver_present",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_randr::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_randr-RelWithDebInfo-59fbf4672d73ecafc0ea.json",
+					"name" : "xserver_randr",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_record::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_record-RelWithDebInfo-33c3c18fb8c66d961a3e.json",
+					"name" : "xserver_record",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_render::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_render-RelWithDebInfo-8c181d9fef6e2f435b48.json",
+					"name" : "xserver_render",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xext-RelWithDebInfo-512e56add743e3dafb57.json",
+					"name" : "xserver_xext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xfixes::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xfixes-RelWithDebInfo-a33171c9d404facb2c9f.json",
+					"name" : "xserver_xfixes",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xi::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xi-RelWithDebInfo-76708a58c1af466c003d.json",
+					"name" : "xserver_xi",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xi_stubs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xi_stubs-RelWithDebInfo-1ed1ac7b78d2bbf3e925.json",
+					"name" : "xserver_xi_stubs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xkb::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xkb-RelWithDebInfo-47d022240654f790177e.json",
+					"name" : "xserver_xkb",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xkb_stubs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xkb_stubs-RelWithDebInfo-d6d7f0a241237a61998b.json",
+					"name" : "xserver_xkb_stubs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence-RelWithDebInfo-155b9c0b8bbaa821d9f3.json",
+					"name" : "xshmfence",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence_futex::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence_futex-RelWithDebInfo-bf13410bca29a375d6f7.json",
+					"name" : "xshmfence_futex",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence_pthread::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence_pthread-RelWithDebInfo-258056b7b4ed1bd2a0c2.json",
+					"name" : "xshmfence_pthread",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/.cxx/RelWithDebInfo/1f6q4v23/x86",
+		"source" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

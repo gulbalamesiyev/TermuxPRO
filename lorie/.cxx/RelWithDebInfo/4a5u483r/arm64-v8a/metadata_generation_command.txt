@@ -1,0 +1,19 @@
+                        -HC:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=26
+-DANDROID_PLATFORM=android-26
+-DANDROID_ABI=arm64-v8a
+-DCMAKE_ANDROID_ARCH_ABI=arm64-v8a
+-DANDROID_NDK=C:\Users\Laptop\AppData\Local\Android\Sdk\ndk\29.0.14206865
+-DCMAKE_ANDROID_NDK=C:\Users\Laptop\AppData\Local\Android\Sdk\ndk\29.0.14206865
+-DCMAKE_TOOLCHAIN_FILE=C:\Users\Laptop\AppData\Local\Android\Sdk\ndk\29.0.14206865\build\cmake\android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=C:\Users\Laptop\AppData\Local\Android\Sdk\cmake\3.22.1\bin\ninja.exe
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\build\intermediates\cxx\RelWithDebInfo\4a5u483r\obj\arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\build\intermediates\cxx\RelWithDebInfo\4a5u483r\obj\arm64-v8a
+-DCMAKE_BUILD_TYPE=RelWithDebInfo
+-BC:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\.cxx\RelWithDebInfo\4a5u483r\arm64-v8a
+-GNinja
+-DLORIE_EMBEDDED_FAST_BUILD=ON
+                        Build command args: []
+                        Version: 2

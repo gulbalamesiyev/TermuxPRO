@@ -25,9 +25,12 @@
             app:tint="@color/pro_cyan" />
 
         <TextView
+            android:id="@+id/session_center_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
+            android:gravity="center"
+            android:singleLine="true"
             android:text="@string/application_name_no_pro"
             android:textColor="@color/pro_text_primary"
             android:textSize="22sp"

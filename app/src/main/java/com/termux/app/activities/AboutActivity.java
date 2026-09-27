@@ -12,4 +12,10 @@ public final class AboutActivity extends AppCompatActivity {
         
         findViewById(R.id.about_back_button).setOnClickListener(v -> finish());
     }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
 }

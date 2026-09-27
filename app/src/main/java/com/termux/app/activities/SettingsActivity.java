@@ -52,6 +52,12 @@ public class SettingsActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
     public static class RootPreferencesFragment extends PreferenceFragmentCompat {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

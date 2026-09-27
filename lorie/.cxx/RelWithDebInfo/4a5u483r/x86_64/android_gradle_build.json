@@ -1,0 +1,261 @@
+{
+  "buildFiles": [
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\CMakeLists.txt",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\fontenc.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\md.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\pixman.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\tirpc.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\Xau.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\Xdmcp.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\Xfont2.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\xkbcomp.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\xorgproto.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\xserver.cmake",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\src\\main\\cpp\\recipes\\xshmfence.cmake"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Laptop\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Laptop\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "Xau::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "Xau",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libXau.a"
+    },
+    "Xdmcp::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "Xdmcp",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libXdmcp.a"
+    },
+    "Xfont2::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "Xfont2",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libXfont2.a"
+    },
+    "Xlorie::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "Xlorie",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\build\\intermediates\\cxx\\RelWithDebInfo\\4a5u483r\\obj\\x86_64\\libXlorie.so",
+      "runtimeFiles": []
+    },
+    "fontenc::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "fontenc",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libfontenc.a"
+    },
+    "md::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "md",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libmd.a"
+    },
+    "pixman::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "pixman",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libpixman.a"
+    },
+    "tirpc::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "tirpc",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libtirpc.a"
+    },
+    "xkbcomp::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xkbcomp",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxkbcomp.a"
+    },
+    "xserver_composite::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_composite",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_composite.a"
+    },
+    "xserver_damageext::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_damageext",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_damageext.a"
+    },
+    "xserver_dbe::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_dbe",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_dbe.a"
+    },
+    "xserver_dix::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_dix",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_dix.a"
+    },
+    "xserver_dri3::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_dri3",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_dri3.a"
+    },
+    "xserver_exa::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_exa",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_exa.a"
+    },
+    "xserver_fb::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_fb",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_fb.a"
+    },
+    "xserver_glx::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_glx",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_glx.a"
+    },
+    "xserver_glxvnd::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_glxvnd",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_glxvnd.a"
+    },
+    "xserver_main::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_main",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_main.a"
+    },
+    "xserver_mi::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_mi",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_mi.a"
+    },
+    "xserver_miext_damage::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_miext_damage",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_miext_damage.a"
+    },
+    "xserver_miext_sync::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_miext_sync",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_miext_sync.a"
+    },
+    "xserver_os::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_os",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_os.a"
+    },
+    "xserver_present::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_present",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_present.a"
+    },
+    "xserver_randr::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_randr",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_randr.a"
+    },
+    "xserver_record::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_record",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_record.a"
+    },
+    "xserver_render::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_render",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_render.a"
+    },
+    "xserver_xext::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xext",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xext.a"
+    },
+    "xserver_xfixes::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xfixes",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xfixes.a"
+    },
+    "xserver_xi::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xi",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xi.a"
+    },
+    "xserver_xi_stubs::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xi_stubs",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xi_stubs.a"
+    },
+    "xserver_xkb::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xkb",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xkb.a"
+    },
+    "xserver_xkb_stubs::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xserver_xkb_stubs",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxserver_xkb_stubs.a"
+    },
+    "xshmfence::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xshmfence",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxshmfence.a"
+    },
+    "xshmfence_futex::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xshmfence_futex",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxshmfence_futex.a"
+    },
+    "xshmfence_pthread::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "xshmfence_pthread",
+      "output": "C:\\TermuxX11StageV8\\TermuxPro-X11-renderer-stage-v8-optimized\\termux-pro-app-x11-stage\\lorie\\.cxx\\RelWithDebInfo\\4a5u483r\\x86_64\\libxshmfence_pthread.a"
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\Laptop\\AppData\\Local\\Android\\Sdk\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\Laptop\\AppData\\Local\\Android\\Sdk\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

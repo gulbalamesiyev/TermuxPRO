@@ -4,12 +4,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
 
 typedef struct {
     char icon[128];
     char name[128];
     char desc[256];
-    char pkg[512];
+    char pkg[2048];
     char exec[128];
     char category[64];
     int is_gui;
@@ -31,55 +32,108 @@ typedef struct {
 
 AppEntry *catalog = NULL;
 int catalog_size = 0;
+int widgets_created = 0;
 AppWidgets widgets;
 const char *LIST_URL_MAIN = "https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/main/apps.list";
 const char *LIST_URL_MASTER = "https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/master/apps.list";
 const char *LOCAL_PATH = "/data/data/com.termux/files/usr/var/lib/termux-pro/apps.list";
 char *current_category = "ALL";
 
-int is_installed(const char *name, const char *exec, const char *pkg) {
-    char path[512];
+int is_app_installed_robust(AppEntry *app) {
     const char *home = getenv("HOME");
     if (!home) home = "/data/data/com.termux/files/home";
-    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, name);
-    if (access(path, F_OK) == 0) return 1;
-    if (exec && strlen(exec) > 0) {
-        char cmd[256];
-        snprintf(cmd, sizeof(cmd), "command -v %s >/dev/null 2>&1", exec);
-        if (system(cmd) == 0) return 1;
+    const char *prefix = "/data/data/com.termux/files/usr";
+    char path[1024];
+
+    // Special check for Java/JAR based apps like Burp Suite
+    if (strcmp(app->name, "Burp Suite") == 0) {
+        snprintf(path, sizeof(path), "%s/burp.jar", home);
+        if (access(path, F_OK) == 0) return 1;
+        return 0;
     }
-    if (pkg && strlen(pkg) > 0) {
+
+    // 1. Fast, lightweight Desktop file check (No heavy external bash/grep loops on UI thread)
+    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, app->name);
+    if (access(path, F_OK) == 0) return 1;
+
+    // Check lowercase version or exec/pkg filename in Desktop
+    char lower_name[128];
+    strncpy(lower_name, app->name, sizeof(lower_name) - 1);
+    lower_name[sizeof(lower_name) - 1] = '\0';
+    for(int i = 0; lower_name[i]; i++){ if(lower_name[i] >= 'A' && lower_name[i] <= 'Z') lower_name[i] += 32; else if(lower_name[i] == ' ' || lower_name[i] == '-') lower_name[i] = '_'; }
+    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, lower_name);
+    if (access(path, F_OK) == 0) return 1;
+
+    // 2. Binary Executable Check in $PREFIX/bin
+    if (app->exec[0] != '\0') {
+        char cmd_exec[256];
+        strncpy(cmd_exec, app->exec, 255); cmd_exec[255] = '\0';
+        char *space = strchr(cmd_exec, ' '); if (space) *space = '\0';
+
+        snprintf(path, sizeof(path), "%s/bin/%s", prefix, cmd_exec);
+        if (access(path, X_OK) == 0) return 1;
+    }
+
+    // 3. Fast Dpkg Package Status Check
+    if (app->pkg[0] != '\0') {
         char pkg_name[128] = {0};
-        const char *search = pkg;
+        const char *search = app->pkg;
         const char *last_install = NULL;
-        while ((search = strstr(search, "install -y "))) { last_install = search; search += 11; }
-        if (last_install) strncpy(pkg_name, last_install + 11, 127);
-        else strncpy(pkg_name, pkg, 127);
-        char *end = strpbrk(pkg_name, " ;&");
-        if (end) *end = '\0';
-        if (strlen(pkg_name) > 0) {
-            char cmd[256];
-            snprintf(cmd, sizeof(cmd), "dpkg -s %s 2>/dev/null | grep -q \"Status: install ok installed\"", pkg_name);
-            if (system(cmd) == 0) return 1;
+        const char *p = search;
+
+        while ((p = strstr(p, "install -y "))) {
+            last_install = p;
+            p += 11;
+        }
+
+        if (last_install) {
+            strncpy(pkg_name, last_install + 11, 127);
+            char *end = strpbrk(pkg_name, " ;&|");
+            if (end) *end = '\0';
+
+            if (strlen(pkg_name) > 0 && strstr(pkg_name, "-repo") == NULL) {
+                char query_cmd[256];
+                snprintf(query_cmd, sizeof(query_cmd), "dpkg-query -W -f='${Status}' %s 2>/dev/null | grep -q \"ok installed\"", pkg_name);
+                if (system(query_cmd) == 0) return 1;
+            }
         }
     }
+
     return 0;
 }
 
-gboolean refresh_ui() {
-    if (!catalog) return FALSE;
+gboolean refresh_ui(gpointer data) {
+    if (!catalog || !widgets_created) return TRUE;
+
     for (int i = 0; i < catalog_size; i++) {
-        if (is_installed(catalog[i].name, catalog[i].exec, catalog[i].pkg)) {
+        if (!catalog[i].row_widget || !catalog[i].action_button) continue;
+
+        int installed = is_app_installed_robust(&catalog[i]);
+
+        // System/Core runtimes or apps like Burp Suite should not show UNINSTALL button (or user requested Burp Suite to have uninstall)
+        // Wait, user asked: "burp un uninstall i niye yoxdu" -> Burp Suite must have UNINSTALL!
+        int is_system_runtime = (
+            (strstr(catalog[i].name, "Java") || strstr(catalog[i].name, "Python") ||
+             strstr(catalog[i].name, "Git") || strstr(catalog[i].name, "Node") ||
+             strstr(catalog[i].pkg, "openjdk") || strstr(catalog[i].pkg, "python") ||
+             strstr(catalog[i].pkg, "git") || strstr(catalog[i].pkg, "nodejs")) &&
+            strcmp(catalog[i].name, "Burp Suite") != 0
+        );
+
+        if (installed) {
             gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "UPDATE");
-            gtk_widget_show(catalog[i].uninstall_button);
-            gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Installed");
+            if (catalog[i].uninstall_button) {
+                if (is_system_runtime) gtk_widget_hide(catalog[i].uninstall_button);
+                else gtk_widget_show(catalog[i].uninstall_button);
+            }
+            if (catalog[i].status_label) gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Installed");
         } else {
             gtk_button_set_label(GTK_BUTTON(catalog[i].action_button), "INSTALL");
-            gtk_widget_hide(catalog[i].uninstall_button);
-            gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Available");
+            if (catalog[i].uninstall_button) gtk_widget_hide(catalog[i].uninstall_button);
+            if (catalog[i].status_label) gtk_label_set_text(GTK_LABEL(catalog[i].status_label), "Available");
         }
     }
-    return FALSE;
+    return TRUE;
 }
 
 void update_filter() {
@@ -106,42 +160,200 @@ void on_category_clicked(GtkButton *btn, gpointer data) {
 }
 
 void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
+    if (!data) return;
     AppEntry *entry = (AppEntry*)data;
     char cmd[4096];
     snprintf(cmd, sizeof(cmd),
              "DISPLAY=:1 xfce4-terminal --title \"Uninstalling %s\" -x bash -c ' "
+             "pkill -9 -x apt 2>/dev/null; pkill -9 -x dpkg 2>/dev/null; rm -f /data/data/com.termux/files/usr/var/lib/dpkg/lock* /data/data/com.termux/files/usr/var/lib/apt/lists/lock 2>/dev/null; "
              "echo \"Uninstalling %s...\"; RAW_PKG=\"%s\"; EXEC_NAME=\"%s\"; "
-             "if echo \"$RAW_PKG\" | grep -q \"npm\"; then uninstall_cmd=${RAW_PKG/install/uninstall}; eval $uninstall_cmd; "
-             "else pkg uninstall -y \"$RAW_PKG\" 2>/dev/null; [ \"$RAW_PKG\" != \"$EXEC_NAME\" ] && pkg uninstall -y \"$EXEC_NAME\" 2>/dev/null; fi; "
+             "if [ \"%s\" = \"Burp Suite\" ]; then rm -f \"$HOME/burp.jar\"; fi; "
+             "if echo \"$RAW_PKG\" | grep -q \"npm\"; then "
+             "  uninstall_cmd=${RAW_PKG/install/uninstall}; eval $uninstall_cmd; "
+             "else "
+             "  PKG_TO_UNINSTALL=\"\"; "
+             "  if [[ \"$RAW_PKG\" == *\"install -y \"* ]]; then "
+             "    PKG_TO_UNINSTALL=\"${RAW_PKG##*install -y }\"; "
+             "    PKG_TO_UNINSTALL=\"${PKG_TO_UNINSTALL%%[;&|]*}\"; "
+             "    PKG_TO_UNINSTALL=$(echo $PKG_TO_UNINSTALL | cut -d\" \" -f1); "
+             "  fi; "
+             "  [ -z \"$PKG_TO_UNINSTALL\" ] && PKG_TO_UNINSTALL=\"$EXEC_NAME\"; "
+             "  pkg uninstall -y \"$PKG_TO_UNINSTALL\" 2>/dev/null; "
+             "  [ \"$PKG_TO_UNINSTALL\" != \"$EXEC_NAME\" ] && pkg uninstall -y \"$EXEC_NAME\" 2>/dev/null; "
+             "fi; "
              "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null; EXEC_BASE=$(basename \"$EXEC_NAME\" 2>/dev/null | cut -d\" \" -f1); "
              "if [ -n \"$EXEC_BASE\" ] && [ \"$EXEC_BASE\" != \".\" ]; then for d in \"$HOME/Desktop\"/*.desktop; do [ -f \"$d\" ] && grep -qiE \"^Exec=(.*[/ ])?$EXEC_BASE( |%%|$)\" \"$d\" 2>/dev/null && rm -f \"$d\"; done; fi; "
              "sync; xfdesktop --reload 2>/dev/null; touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; echo \"Done.\"; sleep 1' &",
-             entry->name, entry->name, entry->pkg, entry->exec, entry->name);
+             entry->name, entry->name, entry->pkg, entry->exec, entry->name, entry->name);
     system(cmd);
-    refresh_ui();
+    refresh_ui(NULL);
 }
 
 void on_action_clicked(GtkWidget *widget, gpointer data) {
+    if (!data) return;
     AppEntry *entry = (AppEntry*)data;
-    char cmd[16384]; char clean_icon[128]; strncpy(clean_icon, entry->icon, 127); clean_icon[127] = '\0';
-    char *dot = strrchr(clean_icon, '.'); if (dot && (strcmp(dot, ".png") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".xpm") == 0)) *dot = '\0';
-    snprintf(cmd, sizeof(cmd),
-             "DISPLAY=:1 xfce4-terminal --title \"Installing %s\" -x bash -c ' "
-             "echo \"Installing %s...\"; REPO_URL=\"https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/main/tor/downloads/%s.sh\"; "
-             "INSTALLER_TMP=\"$HOME/.cache/termux-pro-install\"; mkdir -p \"$INSTALLER_TMP\"; "
-             "if curl -s -f -I \"$REPO_URL\" >/dev/null; then curl -L \"$REPO_URL\" -o \"$INSTALLER_TMP/installer.sh\" && bash \"$INSTALLER_TMP/installer.sh\" \"%s\" \"%s\" \"%s\"; RET=$?; "
-             "[ -f \"$INSTALLER_TMP/.skip_shortcut\" ] && { rm -f \"$INSTALLER_TMP/.skip_shortcut\"; touch \"$INSTALLER_TMP/.refresh_ui\"; exit 0; }; "
-             "elif echo \"%s\" | grep -q \" \"; then %s; RET=$?; else pkg install -y %s; RET=$?; fi; "
-             "if [ $RET -eq 0 ]; then echo \"Creating Shortcut...\"; CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"; EXEC_PATH=\"%s\"; [ ! -f \"$EXEC_PATH\" ] && EXEC_PATH=$(command -v \"%s\"); [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"%s\"; EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1); ([ -z \"$EXEC_BASE\" ] || [ \"$EXEC_BASE\" = \".\" ]) && EXEC_BASE=\"%s\"; "
-             "pick_native() { local d bn; for d in \"$PREFIX/share/applications\"/*.desktop \"$HOME/.local/share/applications\"/*.desktop; do [ -f \"$d\" ] || continue; bn=$(basename \"$d\" .desktop); if [ \"$bn\" = \"$EXEC_BASE\" ] || [ \"$bn\" = \"%s\" ] || [ \"$bn\" = \"%s\" ] || grep -qiE \"^Name=%s$\" \"$d\" 2>/dev/null; then NATIVE_DESKTOP=\"$d\"; return; fi; done; }; pick_native; "
-             "RESOLVED_ICON=\"\"; find_icon() { local name=\"$1\"; [ -z \"$name\" ] && return; [ -f \"$name\" ] && RESOLVED_ICON=\"$name\" && return; local found=$(find \"$PREFIX/share/icons/hicolor/scalable/apps\" \"$PREFIX/share/icons/Papirus/scalable/apps\" \"$PREFIX/share/icons/hicolor/128x128/apps\" \"$PREFIX/share/icons\" -name \"$name.png\" -o -name \"$name.svg\" 2>/dev/null | head -n 1); RESOLVED_ICON=\"${found:-$name}\"; }; "
-             "if [ -n \"$NATIVE_DESKTOP\" ]; then FILE=\"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"; rm -f \"$FILE\"; cp \"$NATIVE_DESKTOP\" \"$FILE\"; [ \"$FILE\" != \"$CATALOG_FILE\" ] && rm -f \"$CATALOG_FILE\"; NATIVE_ICON=$(grep \"^Icon=\" \"$FILE\" | cut -d= -f2 | head -1); find_icon \"${NATIVE_ICON:-%s}\"; [ \"$RESOLVED_ICON\" = \"$NATIVE_ICON\" ] && find_icon \"$EXEC_BASE\"; sed -i \"s|^Icon=.*|Icon=$RESOLVED_ICON|\" \"$FILE\" || echo \"Icon=$RESOLVED_ICON\" >> \"$FILE\"; if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then sed -i 's|^Exec=.*|Exec=vlc --wrapper-2.0 %%U|' \"$FILE\"; fi; "
-             "else FILE=\"$CATALOG_FILE\"; rm -f \"$FILE\"; EXTRA_ENV=\"QT_QPA_PLATFORM=xcb QT_X11_NO_MITSHM=1\"; [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_ENV=\"$EXTRA_ENV --no-sandbox\"; if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then EXEC_CMD=\"$EXEC_PATH --wrapper-2.0\"; else [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXTRA_ENV $EXEC_PATH\\\"\" || EXEC_CMD=\"dbus-launch $EXTRA_ENV $EXEC_PATH\"; fi; find_icon \"%s\"; [ \"$RESOLVED_ICON\" = \"%s\" ] && find_icon \"$EXEC_BASE\"; [ \"$RESOLVED_ICON\" = \"$EXEC_BASE\" ] && RESOLVED_ICON=\"utilities-terminal\"; printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=false\\nCategories=%s;\\n\" > \"$FILE\"; fi; "
-             "chmod 755 \"$FILE\"; sync; xfdesktop --reload 2>/dev/null; fi; "
-             "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; if [ $RET -eq 0 ]; then echo \"Done.\"; sleep 1; else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi' &",
-             entry->name, entry->name, entry->pkg, entry->pkg, entry->name, entry->exec, entry->pkg, entry->pkg, entry->pkg, entry->name, entry->exec, entry->exec, entry->exec, entry->exec, entry->exec, entry->name, entry->name, entry->name, entry->is_gui, clean_icon, clean_icon, entry->name, entry->category);
+
+    // Create a temporary installer script to avoid shell quoting issues
+    char script_path[512];
+    snprintf(script_path, sizeof(script_path), "/data/data/com.termux/files/usr/tmp/app_install_%s.sh", entry->name);
+
+    FILE *fp = fopen(script_path, "w");
+    if (fp) {
+        fprintf(fp, "#!/bin/bash\n");
+        fprintf(fp, "export PREFIX=/data/data/com.termux/files/usr\n");
+        fprintf(fp, "export PATH=\"$PREFIX/bin:$PATH\"\n");
+        fprintf(fp, "export HOME=\"${HOME:-/data/data/com.termux/files/home}\"\n");
+        fprintf(fp, "echo \"Installing %s...\"\n", entry->name);
+
+        // Auto-resolve any background dpkg/apt locks
+        fprintf(fp, "clear_locks() {\n");
+        fprintf(fp, "  local count=0\n");
+        fprintf(fp, "  while [ $count -lt 3 ]; do\n");
+        fprintf(fp, "    if ! pgrep -x \"apt\" >/dev/null && ! pgrep -x \"dpkg\" >/dev/null; then break; fi\n");
+        fprintf(fp, "    sleep 1\n");
+        fprintf(fp, "    count=$((count + 1))\n");
+        fprintf(fp, "  done\n");
+        fprintf(fp, "  pkill -9 -x \"apt\" 2>/dev/null || true\n");
+        fprintf(fp, "  pkill -9 -x \"dpkg\" 2>/dev/null || true\n");
+        fprintf(fp, "  rm -f \"$PREFIX/var/lib/dpkg/lock\"* 2>/dev/null || true\n");
+        fprintf(fp, "  rm -f \"$PREFIX/var/lib/apt/lists/lock\" 2>/dev/null || true\n");
+        fprintf(fp, "}\n");
+        fprintf(fp, "clear_locks\n");
+
+        // Self-heal broken curl/libcurl linkage (ngtcp2 symbol mismatch)
+        fprintf(fp, "if ! curl --version >/dev/null 2>&1; then\n");
+        fprintf(fp, "  echo \"[System Self-Heal] curl is broken due to library mismatch.\"\n");
+        fprintf(fp, "  echo \"[System Self-Heal] Repairing curl and libcurl via apt...\"\n");
+        fprintf(fp, "  apt update && apt install -y curl libcurl 2>/dev/null || true\n");
+        fprintf(fp, "fi\n");
+
+        // Override 'pkg' command to bypass curl dependency and route directly to apt
+        fprintf(fp, "pkg() {\n");
+        fprintf(fp, "  local cmd=\"$1\"\n");
+        fprintf(fp, "  if [ \"$cmd\" = \"install\" ]; then\n");
+        fprintf(fp, "    shift\n");
+        fprintf(fp, "    local args=()\n");
+        fprintf(fp, "    for arg in \"$@\"; do\n");
+        fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
+        fprintf(fp, "    done\n");
+        fprintf(fp, "    apt install -y \"${args[@]}\"\n");
+        fprintf(fp, "  elif [ \"$cmd\" = \"uninstall\" ] || [ \"$cmd\" = \"remove\" ]; then\n");
+        fprintf(fp, "    shift\n");
+        fprintf(fp, "    local args=()\n");
+        fprintf(fp, "    for arg in \"$@\"; do\n");
+        fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
+        fprintf(fp, "    done\n");
+        fprintf(fp, "    apt remove -y \"${args[@]}\"\n");
+        fprintf(fp, "  elif [ \"$cmd\" = \"upgrade\" ]; then\n");
+        fprintf(fp, "    shift\n");
+        fprintf(fp, "    apt upgrade -y \"$@\"\n");
+        fprintf(fp, "  else\n");
+        fprintf(fp, "    command pkg \"$@\"\n");
+        fprintf(fp, "  fi\n");
+        fprintf(fp, "}\n");
+        fprintf(fp, "export -f pkg 2>/dev/null || true\n");
+
+        // Ensure repos are enabled and updated
+        fprintf(fp, "pkg install -y x11-repo tur-repo glibc-repo 2>/dev/null\n");
+        fprintf(fp, "apt update\n");
+
+        // Execute the package command (Real Upgrade / Full-Upgrade for system runtimes to ensure latest version)
+        if (strstr(entry->pkg, "openjdk") || strstr(entry->pkg, "python") || strstr(entry->pkg, "git") || strstr(entry->pkg, "nodejs")) {
+            fprintf(fp, "echo \"Performing real latest version upgrade/install...\"\n");
+            if (strchr(entry->pkg, ' ') == NULL) {
+                fprintf(fp, "apt install --only-upgrade -y \"%s\" 2>/dev/null || apt install -y \"%s\"\n", entry->pkg, entry->pkg);
+            } else {
+                fprintf(fp, "%s\n", entry->pkg);
+            }
+        } else {
+            if (strchr(entry->pkg, ' ') == NULL) {
+                fprintf(fp, "pkg install -y \"%s\"\n", entry->pkg);
+            } else {
+                fprintf(fp, "%s\n", entry->pkg);
+            }
+        }
+        fprintf(fp, "RET=$?\n");
+
+        // Shortcut creation logic (Skip shortcuts for pure core system runtimes like Java, Python, Git, Node.js)
+        fprintf(fp, "if [ $RET -eq 0 ]; then\n");
+        fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk|python|git|nodejs\" || echo \"%s\" | grep -qiE \"^Java|^Python|^Git|^Node\"; then\n", entry->pkg, entry->name);
+        fprintf(fp, "    echo \"Core system runtime installed successfully. Skipping Desktop shortcut creation.\"\n");
+        fprintf(fp, "  else\n");
+        fprintf(fp, "    echo \"Creating Shortcut...\"\n");
+        fprintf(fp, "    CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"\n", entry->name);
+        fprintf(fp, "    EXEC_RAW=\"%s\"\n", entry->exec);
+        fprintf(fp, "    if [[ \"$EXEC_RAW\" == /* ]]; then\n");
+        fprintf(fp, "      EXEC_PATH=\"$EXEC_RAW\"\n");
+        fprintf(fp, "    else\n");
+        fprintf(fp, "      EXEC_PATH=$(command -v \"$EXEC_RAW\")\n");
+        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && [ -f \"$PREFIX/bin/$EXEC_RAW\" ] && EXEC_PATH=\"$PREFIX/bin/$EXEC_RAW\"\n");
+        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"$EXEC_RAW\"\n");
+        fprintf(fp, "    fi\n");
+        fprintf(fp, "    EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1)\n");
+
+        fprintf(fp, "  pick_native() {\n");
+        fprintf(fp, "    local d bn\n");
+        fprintf(fp, "    for d in \"$PREFIX/share/applications\"/*.desktop \"$HOME/.local/share/applications\"/*.desktop; do\n");
+        fprintf(fp, "      [ -f \"$d\" ] || continue\n");
+        fprintf(fp, "      bn=$(basename \"$d\" .desktop)\n");
+        fprintf(fp, "      if [ \"$bn\" = \"$EXEC_BASE\" ] || [ \"$bn\" = \"%s\" ] || [ \"$bn\" = \"%s\" ] || grep -qiE \"^Name=%s$\" \"$d\" 2>/dev/null; then\n", entry->name, entry->name, entry->name);
+        fprintf(fp, "        NATIVE_DESKTOP=\"$d\"\n");
+        fprintf(fp, "        return\n");
+        fprintf(fp, "      fi\n");
+        fprintf(fp, "    done\n");
+        fprintf(fp, "  }\n");
+        fprintf(fp, "  pick_native\n");
+
+        fprintf(fp, "  RESOLVED_ICON=\"\"\n");
+        fprintf(fp, "  find_icon() {\n");
+        fprintf(fp, "    local name=\"$1\"; [ -z \"$name\" ] && return\n");
+        fprintf(fp, "    [ -f \"$name\" ] && RESOLVED_ICON=\"$name\" && return\n");
+        fprintf(fp, "    # If it is a simple icon name, let XFCE resolve it from the active theme (e.g. Papirus SVG)\n");
+        fprintf(fp, "    if [[ \"$name\" != */* && \"$name\" != *.* ]]; then\n");
+        fprintf(fp, "      RESOLVED_ICON=\"$name\"\n");
+        fprintf(fp, "      return\n");
+        fprintf(fp, "    fi\n");
+        fprintf(fp, "    # Otherwise search for high-res SVG or scalable PNG files\n");
+        fprintf(fp, "    local found=$(find \"$PREFIX/share/icons\" -name \"*$name*.svg\" 2>/dev/null | head -n 1)\n");
+        fprintf(fp, "    [ -z \"$found\" ] && found=$(find \"$PREFIX/share/icons\" -name \"*$name*.png\" 2>/dev/null | grep -E \"scalable|512x512|256x256|128x128\" | head -n 1)\n");
+        fprintf(fp, "    [ -z \"$found\" ] && found=$(find \"$PREFIX/share/icons\" -name \"*$name*.png\" 2>/dev/null | head -n 1)\n");
+        fprintf(fp, "    RESOLVED_ICON=\"${found:-security-high}\"\n");
+        fprintf(fp, "  }\n");
+        fprintf(fp, "  find_icon \"%s\"\n", entry->icon);
+
+        fprintf(fp, "  if [ -n \"$NATIVE_DESKTOP\" ]; then\n");
+        fprintf(fp, "    rm -f \"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"\n");
+        fprintf(fp, "  fi\n");
+        fprintf(fp, "  FILE=\"$CATALOG_FILE\"\n");
+        fprintf(fp, "  rm -f \"$FILE\"\n");
+        fprintf(fp, "  EXTRA_FLAGS=\"\"\n");
+        fprintf(fp, "  [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_FLAGS=\"--no-sandbox\"\n");
+        fprintf(fp, "  if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then\n");
+        fprintf(fp, "    EXEC_CMD=\"$EXEC_PATH --wrapper-2.0\"\n");
+        fprintf(fp, "    TERM_FLAG=\"false\"\n");
+        fprintf(fp, "  elif [[ \"%s\" == *\"burp\"* ]] || [[ \"%s\" == *\"Burp\"* ]] || [[ \"%s\" == *\"java\"* ]]; then\n", entry->name, entry->name, entry->exec);
+        fprintf(fp, "    EXEC_CMD=\"java -jar /data/data/com.termux/files/home/burp.jar\"\n");
+        fprintf(fp, "    TERM_FLAG=\"false\"\n");
+        fprintf(fp, "  else\n");
+        fprintf(fp, "    [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXEC_PATH $EXTRA_FLAGS\\\"\" || EXEC_CMD=\"$EXEC_PATH $EXTRA_FLAGS\"\n", entry->is_gui);
+        fprintf(fp, "    [ \"%d\" -eq 0 ] && TERM_FLAG=\"true\" || TERM_FLAG=\"false\"\n", entry->is_gui);
+        fprintf(fp, "    fi\n");
+        fprintf(fp, "    printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=$TERM_FLAG\\nCategories=%s;\\n\" > \"$FILE\"\n", entry->name, entry->category);
+        fprintf(fp, "    chmod 755 \"$FILE\"\n");
+        fprintf(fp, "    sync; xfdesktop --reload 2>/dev/null\n");
+        fprintf(fp, "  fi\n");
+        fprintf(fp, "fi\n");
+
+        fprintf(fp, "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null\n");
+        fprintf(fp, "if [ $RET -eq 0 ]; then echo \"Done.\"; sleep 1; else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi\n");
+        fclose(fp);
+        chmod(script_path, 0755);
+    }
+
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal --title \"Installing %s\" -x bash \"%s\" &", entry->name, script_path);
     system(cmd);
-    refresh_ui();
+    refresh_ui(NULL);
 }
 
 void on_search_changed(GtkEditable *editable, gpointer user_data) { update_filter(); }
@@ -182,8 +394,9 @@ void populate_list() {
         gtk_list_box_insert(GTK_LIST_BOX(widgets.list_box), row, -1);
     }
     gtk_widget_show_all(widgets.list_box);
+    widgets_created = 1;
     update_filter();
-    refresh_ui();
+    refresh_ui(NULL);
 }
 
 static gboolean on_load_finished(gpointer data) {
@@ -196,37 +409,51 @@ static gboolean on_load_finished(gpointer data) {
 
 static void* load_catalog_thread(void* data) {
     system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro");
-    unlink(LOCAL_PATH); // Köhnə keş faylını dərhal təmizləyirik!
-    char sync_cmd[2048];
-    long timestamp = (long)time(NULL); // Keş qırıcı (Cache Buster)
-    snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MAIN, timestamp);
-    if (system(sync_cmd) != 0) {
-        snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 20 --retry 3 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MASTER, timestamp);
-        system(sync_cmd);
-    }
+
+    // First, try loading local apps.list (packaged in APK assets and copied at startup).
+    // If local apps.list doesn't exist, fetch from online repo.
     FILE *fp = fopen(LOCAL_PATH, "r");
+    if (!fp) {
+        char sync_cmd[2048];
+        long timestamp = (long)time(NULL);
+        snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 10 --retry 2 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MAIN, timestamp);
+        if (system(sync_cmd) != 0) {
+            snprintf(sync_cmd, sizeof(sync_cmd), "curl -f -L -s -k --connect-timeout 10 --retry 2 -o %s \"%s?t=%ld\"", LOCAL_PATH, LIST_URL_MASTER, timestamp);
+            system(sync_cmd);
+        }
+        fp = fopen(LOCAL_PATH, "r");
+    }
     if (fp) {
-        char line[1024]; while (fgets(line, sizeof(line), fp)) if(strlen(line) > 5) catalog_size++;
+        char line[2048];
+        while (fgets(line, sizeof(line), fp)) {
+            if (strlen(line) > 10 && strchr(line, '|')) catalog_size++;
+        }
         rewind(fp);
         if (catalog_size > 0) {
             catalog = calloc(catalog_size, sizeof(AppEntry));
             int i = 0;
             while (fgets(line, sizeof(line), fp) && i < catalog_size) {
-                char *lptr = line; if ((unsigned char)line[0] == 0xEF) lptr += 3;
+                char *lptr = line;
+                if ((unsigned char)line[0] == 0xEF) lptr += 3; // Skip BOM
                 char *token; int field = 0;
-                while ((token = strsep(&lptr, "|")) != NULL) {
+                char *saveptr;
+                char *tmp_line = strdup(lptr);
+                char *curr = tmp_line;
+                while ((token = strsep(&curr, "|")) != NULL && field < 7) {
                     token[strcspn(token, "\r\n")] = 0;
                     if (field == 0) strncpy(catalog[i].icon, token, 127);
                     else if (field == 1) strncpy(catalog[i].name, token, 127);
                     else if (field == 2) strncpy(catalog[i].desc, token, 255);
-                    else if (field == 3) strncpy(catalog[i].pkg, token, 511);
+                    else if (field == 3) strncpy(catalog[i].pkg, token, 2047);
                     else if (field == 4) strncpy(catalog[i].exec, token, 127);
                     else if (field == 5) strncpy(catalog[i].category, token, 63);
                     else if (field == 6) catalog[i].is_gui = atoi(token);
                     field++;
                 }
-                i++;
+                free(tmp_line);
+                if (field >= 4) i++; // Minimum required fields
             }
+            catalog_size = i; // Adjust to actual count
             fclose(fp); g_idle_add(on_load_finished, GINT_TO_POINTER(1));
         } else { fclose(fp); g_idle_add(on_load_finished, GINT_TO_POINTER(0)); }
     } else { g_idle_add(on_load_finished, GINT_TO_POINTER(0)); }
@@ -235,16 +462,42 @@ static void* load_catalog_thread(void* data) {
 
 gboolean check_refresh_trigger(gpointer data) {
     char path[256]; snprintf(path, sizeof(path), "%s/.cache/termux-pro-install/.refresh_ui", getenv("HOME"));
-    if (access(path, F_OK) == 0) { unlink(path); refresh_ui(); }
+    if (access(path, F_OK) == 0) {
+        unlink(path);
+        refresh_ui(NULL);
+    }
+    // Avtomatik olaraq dövri olaraq da UI-ı təzələyir ki, heç bir manual refresh-ə ehtiyac qalmasın
+    static int tick = 0;
+    if (++tick >= 3) {
+        tick = 0;
+        refresh_ui(NULL);
+    }
     return TRUE;
 }
 
-void on_manual_refresh_clicked(GtkWidget *widget, gpointer data) { refresh_ui(); }
+void on_manual_refresh_clicked(GtkWidget *widget, gpointer data) { refresh_ui(NULL); }
 
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
-    g_timeout_add(500, (GSourceFunc)check_refresh_trigger, NULL);
-    g_timeout_add(5000, (GSourceFunc)refresh_ui, NULL);
+
+    // Ultra-lightweight Minimalist Flat CSS Styling (Zero hover shadows or background changes)
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider,
+        "window { background-color: #ffffff; }"
+        "list { background-color: #ffffff; border: none; }"
+        "row { padding: 6px; border-bottom: 1px solid #f0f0f0; background-color: #ffffff; box-shadow: none; border-radius: 0px; }"
+        "row:hover { background-color: #ffffff; box-shadow: none; border-color: transparent; }"
+        "button { border-radius: 3px; padding: 4px 10px; background-image: none; background-color: #f5f5f5; border: 1px solid #cccccc; color: #333333; box-shadow: none; }"
+        "button:hover { background-color: #e8e8e8; box-shadow: none; }"
+        "button.suggested-action { background-color: #007acc; color: #ffffff; border: 1px solid #005999; box-shadow: none; }"
+        "button.suggested-action:hover { background-color: #005999; box-shadow: none; }"
+        "entry { border: 1px solid #cccccc; border-radius: 3px; padding: 4px 8px; background: #ffffff; color: #000000; box-shadow: none; }"
+        "label { color: #222222; text-shadow: none; }", -1, NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+        GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    g_timeout_add(1000, (GSourceFunc)check_refresh_trigger, NULL);
+
     GtkSettings *settings = gtk_settings_get_default();
     g_object_set(settings, "gtk-icon-theme-name", "Papirus", NULL);
     GtkIconTheme *theme = gtk_icon_theme_get_default();
@@ -252,14 +505,13 @@ int main(int argc, char *argv[]) {
     gtk_icon_theme_append_search_path(theme, "/data/data/com.termux/files/usr/share/icons/Papirus");
     gtk_icon_theme_append_search_path(theme, "/data/data/com.termux/files/usr/share/pixmaps");
     widgets.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(widgets.window), "Termux App Store");
+    gtk_window_set_title(GTK_WINDOW(widgets.window), "App Store (Simplified)");
     gtk_window_set_icon_name(GTK_WINDOW(widgets.window), "software-center");
     gtk_window_set_default_size(GTK_WINDOW(widgets.window), 850, 600);
     gtk_window_set_position(GTK_WINDOW(widgets.window), GTK_WIN_POS_CENTER);
     g_signal_connect(widgets.window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     GtkWidget *main_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(widgets.window), main_vbox);
-
     GtkWidget *search_bar = gtk_search_bar_new();
     GtkWidget *search_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     widgets.search_entry = gtk_search_entry_new();
@@ -272,7 +524,6 @@ int main(int argc, char *argv[]) {
     gtk_search_bar_set_search_mode(GTK_SEARCH_BAR(search_bar), TRUE);
     gtk_box_pack_start(GTK_BOX(main_vbox), search_bar, FALSE, FALSE, 5);
     g_signal_connect(widgets.search_entry, "changed", G_CALLBACK(on_search_changed), NULL);
-
     widgets.cat_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_container_set_border_width(GTK_CONTAINER(widgets.cat_box), 10);
     gtk_box_pack_start(GTK_BOX(main_vbox), widgets.cat_box, FALSE, FALSE, 0);
@@ -283,9 +534,8 @@ int main(int argc, char *argv[]) {
         g_signal_connect(btn, "clicked", G_CALLBACK(on_category_clicked), (gpointer)cats[i]);
         gtk_box_pack_start(GTK_BOX(widgets.cat_box), btn, TRUE, TRUE, 0);
     }
-
     widgets.stack = gtk_stack_new();
-    gtk_stack_set_transition_type(GTK_STACK(widgets.stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+    gtk_stack_set_transition_type(GTK_STACK(widgets.stack), GTK_STACK_TRANSITION_TYPE_NONE);
     gtk_box_pack_start(GTK_BOX(main_vbox), widgets.stack, TRUE, TRUE, 0);
     GtkWidget *load_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
     gtk_container_set_border_width(GTK_CONTAINER(load_box), 50);

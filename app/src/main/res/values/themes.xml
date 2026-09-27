@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Soft Cross-Fade Animation for All Activity Transitions -->
+    <style name="FadeActivityAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
+    </style>
+
     <!-- Base Material 3 Theme -->
     <style name="Theme.TermuxApp.DayNight.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/pro_cyan</item>
@@ -8,11 +16,13 @@
         <item name="android:windowBackground">@color/pro_bg_deep</item>
         <item name="android:navigationBarColor">@color/pro_bg_deep</item>
         <item name="android:statusBarColor">@color/pro_bg_deep</item>
+        <item name="android:windowAnimationStyle">@style/FadeActivityAnimation</item>
     </style>
 
     <style name="Theme.TermuxApp.DayNight.DarkActionBar" parent="Theme.Material3.DayNight">
         <item name="colorPrimary">@color/pro_cyan</item>
         <item name="android:windowBackground">@color/pro_bg_deep</item>
+        <item name="android:windowAnimationStyle">@style/FadeActivityAnimation</item>
     </style>
 
     <!-- TermuxActivity Pro Theme -->
@@ -29,6 +39,7 @@
 
         <!-- Enable Edge-to-Edge -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowAnimationStyle">@style/FadeActivityAnimation</item>
 
         <!-- Left drawer -->
         <item name="termuxActivityDrawerBackground">@color/pro_bg_deep</item>

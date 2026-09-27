@@ -1,0 +1,375 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "lorie",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Xau::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xau-Debug-8e0786844326ef8a0672.json",
+					"name" : "Xau",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xdmcp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xdmcp-Debug-201d211957dab4b140c9.json",
+					"name" : "Xdmcp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xfont2::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xfont2-Debug-8c852eb99db11576313c.json",
+					"name" : "Xfont2",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Xlorie::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Xlorie-Debug-ad1743314da85acc28ac.json",
+					"name" : "Xlorie",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "fontenc::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-fontenc-Debug-2bec732e4025f0c51c1a.json",
+					"name" : "fontenc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "md::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-md-Debug-343e819d6d486aa8c229.json",
+					"name" : "md",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pixman::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pixman-Debug-717253f24d52e4c519d6.json",
+					"name" : "pixman",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "tirpc::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-tirpc-Debug-990e42def63e94f98f85.json",
+					"name" : "tirpc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xkbcomp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xkbcomp-Debug-ca5c4b113f9995d6c144.json",
+					"name" : "xkbcomp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_composite::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_composite-Debug-899c2d41b75f438e2c32.json",
+					"name" : "xserver_composite",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_damageext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_damageext-Debug-bac3fc76c5259c4603a4.json",
+					"name" : "xserver_damageext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dbe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dbe-Debug-062d0eaad0437ae32879.json",
+					"name" : "xserver_dbe",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dix::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dix-Debug-da00ee84df6b33203e88.json",
+					"name" : "xserver_dix",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_dri3::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_dri3-Debug-b1f06b9822425913ad83.json",
+					"name" : "xserver_dri3",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_exa::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_exa-Debug-b1f2e296d516462d38df.json",
+					"name" : "xserver_exa",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_fb::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_fb-Debug-a63227a45e008c9e7287.json",
+					"name" : "xserver_fb",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_glx::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_glx-Debug-bcdc0d97595b307647e8.json",
+					"name" : "xserver_glx",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_glxvnd::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_glxvnd-Debug-8ef71062fa2d46c9ab75.json",
+					"name" : "xserver_glxvnd",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_main::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_main-Debug-4f3dcd89a15b40d3340f.json",
+					"name" : "xserver_main",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_mi::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_mi-Debug-cbb6fb665b5883c4b8be.json",
+					"name" : "xserver_mi",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_miext_damage::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_miext_damage-Debug-75627491eb25f0ac1f08.json",
+					"name" : "xserver_miext_damage",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_miext_sync::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_miext_sync-Debug-caa89d692fbc85675842.json",
+					"name" : "xserver_miext_sync",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_os::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_os-Debug-81bd81c5030ab0f294cf.json",
+					"name" : "xserver_os",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_present::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_present-Debug-c272ba319c7d2755c220.json",
+					"name" : "xserver_present",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_randr::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_randr-Debug-7c8c1d98b45d6fba2f3d.json",
+					"name" : "xserver_randr",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_record::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_record-Debug-4e3faac58b901980c16d.json",
+					"name" : "xserver_record",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_render::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_render-Debug-aae65b976e318a13b239.json",
+					"name" : "xserver_render",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xext-Debug-40f3160a6f4ada73e1f2.json",
+					"name" : "xserver_xext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xfixes::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xfixes-Debug-acbea443d51eaafe017f.json",
+					"name" : "xserver_xfixes",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xi::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xi-Debug-d2a486239af1bacfcc10.json",
+					"name" : "xserver_xi",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xi_stubs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xi_stubs-Debug-80e291c9c3582d8b1b49.json",
+					"name" : "xserver_xi_stubs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xkb::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xkb-Debug-18f82302a793647e9ca8.json",
+					"name" : "xserver_xkb",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xserver_xkb_stubs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xserver_xkb_stubs-Debug-ec7ff43f9069fb16cd7f.json",
+					"name" : "xserver_xkb_stubs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence-Debug-6c50cc145762460ed535.json",
+					"name" : "xshmfence",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence_futex::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence_futex-Debug-2fcd70261f591cb9aad2.json",
+					"name" : "xshmfence_futex",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "xshmfence_pthread::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-xshmfence_pthread-Debug-6050d759a77847444f2a.json",
+					"name" : "xshmfence_pthread",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/.cxx/Debug/3n2u1m3p/armeabi-v7a",
+		"source" : "C:/TermuxX11StageV8/TermuxPro-X11-renderer-stage-v8-optimized/termux-pro-app-x11-stage/lorie/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

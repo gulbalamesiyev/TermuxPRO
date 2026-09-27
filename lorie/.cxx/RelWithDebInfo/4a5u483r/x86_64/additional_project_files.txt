@@ -1,0 +1,3 @@
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\generated\ks_tables.h
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\.cxx\RelWithDebInfo\4a5u483r\x86_64\xserver\GL\gl.h
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\.cxx\RelWithDebInfo\4a5u483r\x86_64\xserver\GL\gl.h.rule

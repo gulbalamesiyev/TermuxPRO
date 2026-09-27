@@ -89,7 +89,7 @@ public final class DesktopSessionOrchestrator {
             "mkdir -p \"$HOME/.cache\"; echo $$ > \"$HOME/.cache/termux-pro-x11.pid\"; " +
             "echo \"Starting Termux-X11 bridge...\"; " +
             "/system/bin/app_process -Xnoimage-dex2oat / --nice-name=termux-x11 com.termux.x11.CmdEntryPoint :1 " +
-            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"export PATH=" + PREFIX + "/bin:\\$PATH; export XDG_DATA_DIRS=" + PREFIX + "/share:\\$XDG_DATA_DIRS; dbus-launch --exit-with-session startxfce4\"; " +
+            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"export PATH=" + PREFIX + "/bin:\\$PATH; export XDG_DATA_DIRS=" + PREFIX + "/share:\\$XDG_DATA_DIRS; export DISPLAY=:1; export QT_QPA_PLATFORM=xcb; export QT_X11_NO_MITSHM=1; exec dbus-launch --exit-with-session startxfce4\"; " +
             "x11_status=$?; " +
             "echo \"X11 bridge stopped with status $x11_status\"; " +
             "rm -f \"$HOME/.cache/termux-pro-x11.pid\"; " +

@@ -1,0 +1,4 @@
+
+#pragma once
+#define XTHREADS 1
+#define XUSE_MTSAFE_API 1

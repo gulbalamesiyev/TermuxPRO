@@ -117,6 +117,12 @@ public final class DesktopResourceManager {
                 new File(srcDir).mkdirs();
                 InputStream is = sContext.getAssets().open("termux-pro-app-store.c");
                 Files.copy(is, Paths.get(srcFile), StandardCopyOption.REPLACE_EXISTING);
+
+                // Copy apps.list to the library directory
+                String libDir = TermuxConstants.TERMUX_VAR_PREFIX_DIR_PATH + "/lib/termux-pro";
+                new File(libDir).mkdirs();
+                InputStream isList = sContext.getAssets().open("apps.list");
+                Files.copy(isList, Paths.get(libDir + "/apps.list"), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Failed to copy App Store source asset", e);
             }
@@ -214,8 +220,8 @@ public final class DesktopResourceManager {
             + "apt update || true\n"
             + "say \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\"\n"
             + "say \"TERMUX_PRO_DESKTOP_PROGRESS:20\"\n"
-            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE Desktop...\"\n"
-            + "install_list xkeyboard-config dbus gvfs xfce4 inotify-tools xdg-utils\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading XFCE Desktop & D-Bus...\"\n"
+            + "install_list xkeyboard-config dbus dbus-x11 x11-utils gvfs xfce4 inotify-tools xdg-utils\n"
             + "verify_pkg xfce4-session \"XFCE Core\"\n"
             + "say \"TERMUX_PRO_DESKTOP_PROGRESS:45\"\n"
             + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading terminal and utilities...\"\n"
@@ -232,18 +238,25 @@ public final class DesktopResourceManager {
             + "say \"TERMUX_PRO_DESKTOP_LOG:Configuring applications...\"\n"
             + "sync || true\n"
             + "say \"TERMUX_PRO_DESKTOP_PROGRESS:92\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Installing build tools & GTK3 development headers...\"\n"
+            + "install_list clang make pkg-config gtk3 gtk3-dev glib glib-dev\n"
             + "say \"TERMUX_PRO_DESKTOP_LOG:Compiling native App Store...\"\n"
             + "_compile_ok=0\n"
             + "_c=1\n"
-            + "while [ \"$_c\" -le 2 ]; do\n"
+            + "while [ \"$_c\" -le 3 ]; do\n"
             + "  if clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" $(pkg-config --cflags --libs gtk+-3.0) -lpthread; then\n"
             + "    _compile_ok=1\n"
             + "    break\n"
             + "  fi\n"
             + "  _c=$((_c + 1))\n"
-            + "  install_one gtk3\n"
-            + "  install_one pkg-config\n"
+            + "  install_list clang make pkg-config gtk3 gtk3-dev glib glib-dev\n"
             + "done\n"
+            + "if [ \"$_compile_ok\" -ne 1 ]; then\n"
+            + "  say \"TERMUX_PRO_DESKTOP_LOG:Fallback: Compiling standalone fallback App Store without dynamic pkg-config...\"\n"
+            + "  if clang \"$PREFIX/src/app-store/termux-pro-app-store.c\" -o \"$PREFIX/bin/termux-pro-app-store\" -I\"$PREFIX/include/gtk-3.0\" -I\"$PREFIX/include/glib-2.0\" -I\"$PREFIX/lib/glib-2.0/include\" -I\"$PREFIX/include/pango-1.0\" -I\"$PREFIX/include/harfbuzz\" -I\"$PREFIX/include/atk-1.0\" -I\"$PREFIX/include/cairo\" -I\"$PREFIX/include/gdk-pixbuf-2.0\" -L\"$PREFIX/lib\" -lgtk-3 -lgdk-3 -lz -lpangocairo-1.0 -lpango-1.0 -lharfbuzz -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lpthread; then\n"
+            + "    _compile_ok=1\n"
+            + "  fi\n"
+            + "fi\n"
             + "if [ \"$_compile_ok\" -ne 1 ]; then say \"TERMUX_PRO_DESKTOP_INSTALL_FAILED:App Store compile failed\"; exit 22; fi\n"
             + "verify_pkg termux-pro-app-store \"Native App Store\"\n"
             + "say \"TERMUX_PRO_DESKTOP_PROGRESS:98\"\n"
@@ -435,7 +448,12 @@ public final class DesktopResourceManager {
                 InputStream is = context.getAssets().open("termux-pro-app-store.c");
                 Files.copy(is, Paths.get(srcFile), StandardCopyOption.REPLACE_EXISTING);
 
-                // Compile native app with full path
+                InputStream isList = context.getAssets().open("apps.list");
+                String libDir = TermuxConstants.TERMUX_VAR_PREFIX_DIR_PATH + "/lib/termux-pro";
+                new File(libDir).mkdirs();
+                Files.copy(isList, Paths.get(libDir + "/apps.list"), StandardCopyOption.REPLACE_EXISTING);
+
+                // Compile native app (replaces old binary on success)
                 String compileCmd = "clang " + srcFile + " -o " + binPath + " $(pkg-config --cflags --libs gtk+-3.0) -lpthread";
                 Log.d(LOG_TAG, "Compiling native App Store: " + compileCmd);
                 ProcessBuilder pb = new ProcessBuilder(PREFIX + "/bin/bash", "-c", compileCmd);

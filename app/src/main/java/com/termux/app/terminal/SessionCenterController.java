@@ -27,11 +27,13 @@ import com.termux.app.desktop.DesktopRendererLauncher;
 import com.termux.app.desktop.DesktopResourceManager;
 import com.termux.app.desktop.DesktopSessionOrchestrator;
 import com.termux.shared.activity.ActivityUtils;
+import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.terminal.TerminalSession;
 import com.termux.x11.DesktopNavigationState;
 import com.termux.x11.MainActivity;
 
+import java.io.File;
 import java.util.List;
 
 public final class SessionCenterController {
@@ -97,16 +99,17 @@ public final class SessionCenterController {
     }
 
     public void setVisible(boolean visible, boolean animate) {
-        View overlay = mActivity.findViewById(R.id.home_overlay);
-
         if (visible) {
             mActivity.hideTerminalToolbarAndKeyboard();
+            mActivity.setHomeOverlayVisible(false);
+        } else {
+            mActivity.showTerminalToolbarAndKeyboard();
+            mActivity.setHomeOverlayVisible(true);
         }
 
         if (visible && mRootView.getVisibility() == View.VISIBLE && mRootView.getAlpha() > 0.9f) {
             mRootView.bringToFront();
             mRootView.requestFocus();
-            if (overlay != null) overlay.setVisibility(View.GONE);
             return;
         }
 
@@ -114,12 +117,6 @@ public final class SessionCenterController {
             mRootView.setVisibility(visible ? View.VISIBLE : View.GONE);
             mRootView.setAlpha(1.0f);
             mRootView.setTranslationY(0);
-            if (overlay != null) {
-                overlay.setVisibility(visible ? View.GONE : View.VISIBLE);
-                overlay.setAlpha(1.0f);
-                overlay.setScaleX(1.0f);
-                overlay.setScaleY(1.0f);
-            }
             if (visible) {
                 mRootView.bringToFront();
                 mRootView.requestFocus();
@@ -130,43 +127,21 @@ public final class SessionCenterController {
         if (visible) {
             mRootView.setVisibility(View.VISIBLE);
             mRootView.setAlpha(0.0f);
-            mRootView.setTranslationY(100f);
+            mRootView.setTranslationY(0f);
             mRootView.bringToFront();
             mRootView.requestFocus();
 
             mRootView.animate()
                     .alpha(1.0f)
-                    .translationY(0)
+                    .translationY(0f)
                     .setDuration(300)
                     .setListener(null);
-
-            if (overlay != null) {
-                overlay.animate()
-                        .alpha(0.0f)
-                        .scaleX(0.8f)
-                        .scaleY(0.8f)
-                        .setDuration(200)
-                        .withEndAction(() -> overlay.setVisibility(View.GONE));
-            }
         } else {
             mRootView.animate()
                     .alpha(0.0f)
-                    .translationY(100f)
+                    .translationY(0f)
                     .setDuration(250)
                     .withEndAction(() -> mRootView.setVisibility(View.GONE));
-
-            if (overlay != null) {
-                overlay.setVisibility(View.VISIBLE);
-                overlay.setAlpha(0.0f);
-                overlay.setScaleX(0.8f);
-                overlay.setScaleY(0.8f);
-                overlay.animate()
-                        .alpha(1.0f)
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(300)
-                        .setListener(null);
-            }
         }
     }
 
@@ -415,11 +390,11 @@ public final class SessionCenterController {
                     case READY:
                         boolean interactionBlocked = mActivity.isStartupInteractionBlocked()
                             || DesktopNavigationState.isDesktopLaunchPending();
-                        desktopButton.setEnabled(isRunning && !interactionBlocked);
-                        desktopButton.setAlpha(isRunning && !interactionBlocked ? 1.0f : 0.4f);
-                        desktopButton.setText(R.string.desktop);
+                        desktopButton.setEnabled(!interactionBlocked);
+                        desktopButton.setAlpha(interactionBlocked ? 0.4f : 1.0f);
+                        desktopButton.setText(DesktopNavigationState.isDesktopLaunchPending() ? "Connecting..." : mActivity.getString(R.string.desktop));
                         desktopButton.setOnClickListener(v -> {
-                            if (isRunning && !DesktopNavigationState.isDesktopLaunchPending()) {
+                            if (!DesktopNavigationState.isDesktopLaunchPending()) {
                                 DesktopRendererLauncher.open(mActivity);
                                 mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                                 mActivity.termuxSessionListNotifyUpdated();
@@ -455,12 +430,20 @@ public final class SessionCenterController {
                         desktopButton.setEnabled(!idleInteractionBlocked);
                         desktopButton.setAlpha(idleInteractionBlocked ? 0.4f : 0.8f);
                         if (!resourcesInstalled) {
-                            desktopButton.setText(R.string.desktop);
+                            // Sığortalı yoxlama: Əgər heç olmasa bir fayl varsa, deməli 'REPAIR' lazımdır
+                            boolean partiallyInstalled = new File(TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/xfce4-session").exists();
+                            desktopButton.setText(partiallyInstalled ? R.string.repair_desktop : R.string.desktop);
+                            
+                            if (partiallyInstalled) {
+                                desktopButton.setBackgroundColor(Color.parseColor("#E53935")); // Xəta rəngi (Qırmızı)
+                            }
+
                             desktopButton.setOnClickListener(v -> {
                                 if (!idleInteractionBlocked) showDownloadResourcesDialog(session);
                             });
                         } else {
                             desktopButton.setText(R.string.start_desktop);
+                            desktopButton.setBackgroundColor(mActivity.getResources().getColor(R.color.pro_cyan));
                             desktopButton.setOnClickListener(v -> {
                                 if (idleInteractionBlocked) return;
                                 // Requirement: Always try to provision/update App Store on start

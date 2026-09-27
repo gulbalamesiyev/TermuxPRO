@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,7 +24,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -410,9 +410,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onResume();
 
-        // Ensure Session Center remains visible if no desktop is running
-        if (!DesktopNavigationState.isDesktopOwner(DesktopNavigationState.getActiveDesktopOwnerHandle())) {
+        // Ensure Session Center remains visible if no desktop is running and the user is not
+        // already in the CLI/terminal view (where the floating home overlay must stay visible).
+        if (!DesktopNavigationState.isDesktopOwner(DesktopNavigationState.getActiveDesktopOwnerHandle())
+                && isSessionCenterVisible()) {
             if (mSessionCenterController != null) mSessionCenterController.setVisible(true, false);
+        } else if (!isSessionCenterVisible()) {
+            setHomeOverlayVisible(true);
         }
 
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
@@ -764,8 +768,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                             View parent = (View) v.getParent();
                             if (parent != null) {
                                 float minX = -v.getLeft();
-                                float maxX = parent.getWidth() - v.getRight();
-                                float minY = -v.getTop();
+                                float maxX = 0f;
+                                float minY = 0f;
                                 float maxY = parent.getHeight() - v.getBottom();
 
                                 newTranslationX = MathUtils.clamp(newTranslationX, minX, maxX);
@@ -802,13 +806,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
         });
 
-        homeOverlay.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                homeOverlay.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                restoreHomeOverlayPosition(homeOverlay);
-            }
-        });
+        homeOverlay.post(() -> restoreHomeOverlayPosition(homeOverlay));
     }
 
     private void saveHomeOverlayPosition(View v) {
@@ -822,8 +820,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         float currentX = v.getLeft() + v.getTranslationX();
         float currentY = v.getTop() + v.getTranslationY();
 
-        float xFraction = currentX / availableWidth;
-        float yFraction = currentY / availableHeight;
+        float xFraction = MathUtils.clamp(currentX / availableWidth, 0f, 1f);
+        float yFraction = MathUtils.clamp(currentY / availableHeight, 0f, 1f);
 
         mPreferences.getSharedPreferences().edit()
                 .putFloat("termux_pro_home_overlay_x_fraction", xFraction)
@@ -831,28 +829,43 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 .apply();
     }
 
-    private void restoreHomeOverlayPosition(View v) {
+    public void restoreHomeOverlayPosition(View v) {
+        if (v == null) return;
         View parent = (View) v.getParent();
-        if (parent == null || parent.getWidth() == 0 || parent.getHeight() == 0) return;
+        if (parent == null || parent.getWidth() <= 0 || parent.getHeight() <= 0) return;
 
-        if (findViewById(R.id.session_center_container).getVisibility() == View.VISIBLE) {
-            v.setVisibility(View.GONE);
+        SharedPreferences prefs = mPreferences.getSharedPreferences();
+        if (!prefs.contains("termux_pro_home_overlay_x_fraction")) {
+            v.setTranslationX(0);
+            v.setTranslationY(0);
+            return;
         }
 
-        if (!mPreferences.getSharedPreferences().contains("termux_pro_home_overlay_x_fraction")) return;
-
-        float xFraction = mPreferences.getSharedPreferences().getFloat("termux_pro_home_overlay_x_fraction", -1f);
-        float yFraction = mPreferences.getSharedPreferences().getFloat("termux_pro_home_overlay_y_fraction", -1f);
-        if (xFraction < 0 || yFraction < 0) return;
+        float xFraction = prefs.getFloat("termux_pro_home_overlay_x_fraction", -1f);
+        float yFraction = prefs.getFloat("termux_pro_home_overlay_y_fraction", -1f);
+        if (xFraction < 0 || yFraction < 0) {
+            v.setTranslationX(0);
+            v.setTranslationY(0);
+            return;
+        }
 
         float availableWidth = parent.getWidth() - v.getWidth();
         float availableHeight = parent.getHeight() - v.getHeight();
+        if (availableWidth <= 0 || availableHeight <= 0) return;
 
-        float targetX = xFraction * availableWidth;
-        float targetY = yFraction * availableHeight;
+        float targetX = MathUtils.clamp(xFraction * availableWidth, 0, availableWidth);
+        float targetY = MathUtils.clamp(yFraction * availableHeight, 0, availableHeight);
 
-        v.setTranslationX(targetX - v.getLeft());
-        v.setTranslationY(targetY - v.getTop());
+        float minX = -v.getLeft();
+        float maxX = 0f;
+        float minY = 0f;
+        float maxY = parent.getHeight() - v.getBottom();
+
+        float newTranslationX = MathUtils.clamp(targetX - v.getLeft(), minX, maxX);
+        float newTranslationY = MathUtils.clamp(targetY - v.getTop(), minY, maxY);
+
+        v.setTranslationX(newTranslationX);
+        v.setTranslationY(newTranslationY);
     }
 
 
@@ -894,6 +907,21 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
         if (findViewById(R.id.terminal_toolbar_view_pager) != null) {
             findViewById(R.id.terminal_toolbar_view_pager).setVisibility(View.GONE);
+        }
+    }
+
+    public void showTerminalToolbarAndKeyboard() {
+        if (getTerminalToolbarViewPager() != null && mPreferences.shouldShowTerminalToolbar()) {
+            getTerminalToolbarViewPager().setVisibility(View.VISIBLE);
+            getTerminalToolbarViewPager().bringToFront();
+            if (mExtraKeysView != null && mTermuxTerminalExtraKeys != null) {
+                mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
+            }
+        }
+        if (mTerminalView != null) {
+            mTerminalView.requestFocus();
+            KeyboardUtils.clearDisableSoftKeyboardFlags(this);
+            KeyboardUtils.showSoftKeyboard(this, mTerminalView);
         }
     }
 
@@ -1079,11 +1107,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
 
 
-    private void setHomeOverlayVisible(boolean visible) {
+    public void setHomeOverlayVisible(boolean visible) {
         View overlay = findViewById(R.id.home_overlay);
         if (overlay == null) return;
         if (visible) {
+            overlay.bringToFront();
             overlay.setVisibility(View.VISIBLE);
+            restoreHomeOverlayPosition(overlay);
             overlay.setAlpha(0.0f);
             overlay.setScaleX(0.8f);
             overlay.setScaleY(0.8f);

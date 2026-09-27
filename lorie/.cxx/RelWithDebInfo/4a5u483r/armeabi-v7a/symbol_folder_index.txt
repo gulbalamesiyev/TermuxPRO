@@ -1,0 +1,1 @@
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\build\intermediates\cxx\RelWithDebInfo\4a5u483r\obj\armeabi-v7a

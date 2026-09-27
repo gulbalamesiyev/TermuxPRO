@@ -24,6 +24,7 @@
         <!-- https://developer.android.com/training/tv/start/start.html#transition-color -->
         <item name="android:windowAllowReturnTransitionOverlap">true</item>
         <item name="android:windowAllowEnterTransitionOverlap">true</item>
+        <item name="android:windowAnimationStyle">@style/FadeActivityAnimation</item>
 
         <!-- Left drawer. -->
         <item name="buttonBarButtonStyle">@style/TermuxActivity.Drawer.ButtonBarStyle.Dark</item>

@@ -1,0 +1,12 @@
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\CMakeLists.txt
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\fontenc.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\md.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\pixman.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\tirpc.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\Xau.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\Xdmcp.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\Xfont2.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\xkbcomp.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\xorgproto.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\xserver.cmake
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\recipes\xshmfence.cmake

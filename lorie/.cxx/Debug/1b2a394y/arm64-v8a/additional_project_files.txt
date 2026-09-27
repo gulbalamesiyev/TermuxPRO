@@ -1,0 +1,5 @@
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\pixman\pixman\pixman-arma64-neon-asm.S
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\pixman\pixman\pixman-arma64-neon-asm-bilinear.S
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\src\main\cpp\generated\ks_tables.h
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\.cxx\Debug\1b2a394y\arm64-v8a\xserver\GL\gl.h
+C:\TermuxX11StageV8\TermuxPro-X11-renderer-stage-v8-optimized\termux-pro-app-x11-stage\lorie\.cxx\Debug\1b2a394y\arm64-v8a\xserver\GL\gl.h.rule
