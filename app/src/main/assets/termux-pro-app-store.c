@@ -288,12 +288,13 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "    echo \"Creating Shortcut...\"\n");
         fprintf(fp, "    CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"\n", entry->name);
         fprintf(fp, "    EXEC_RAW=\"%s\"\n", entry->exec);
+        fprintf(fp, "    EXEC_BIN_NAME=$(echo \"$EXEC_RAW\" | cut -d' ' -f1)\n");
         fprintf(fp, "    if [[ \"$EXEC_RAW\" == /* ]]; then\n");
         fprintf(fp, "      EXEC_PATH=\"$EXEC_RAW\"\n");
         fprintf(fp, "    else\n");
-        fprintf(fp, "      EXEC_PATH=$(command -v \"$EXEC_RAW\")\n");
-        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && [ -f \"$PREFIX/bin/$EXEC_RAW\" ] && EXEC_PATH=\"$PREFIX/bin/$EXEC_RAW\"\n");
-        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"$EXEC_RAW\"\n");
+        fprintf(fp, "      EXEC_PATH=$(command -v \"$EXEC_BIN_NAME\" 2>/dev/null)\n");
+        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && [ -f \"$PREFIX/bin/$EXEC_BIN_NAME\" ] && EXEC_PATH=\"$PREFIX/bin/$EXEC_BIN_NAME\"\n");
+        fprintf(fp, "      [ -z \"$EXEC_PATH\" ] && EXEC_PATH=\"/data/data/com.termux/files/usr/bin/$EXEC_BIN_NAME\"\n");
         fprintf(fp, "    fi\n");
         fprintf(fp, "    EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1)\n");
 
