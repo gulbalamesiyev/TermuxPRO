@@ -74,31 +74,6 @@ int is_app_installed_robust(AppEntry *app) {
         if (access(path, X_OK) == 0) return 1;
     }
 
-    // 3. Fast Dpkg Package Status Check
-    if (app->pkg[0] != '\0') {
-        char pkg_name[128] = {0};
-        const char *search = app->pkg;
-        const char *last_install = NULL;
-        const char *p = search;
-
-        while ((p = strstr(p, "install -y "))) {
-            last_install = p;
-            p += 11;
-        }
-
-        if (last_install) {
-            strncpy(pkg_name, last_install + 11, 127);
-            char *end = strpbrk(pkg_name, " ;&|");
-            if (end) *end = '\0';
-
-            if (strlen(pkg_name) > 0 && strstr(pkg_name, "-repo") == NULL) {
-                char query_cmd[256];
-                snprintf(query_cmd, sizeof(query_cmd), "dpkg-query -W -f='${Status}' %s 2>/dev/null | grep -q \"ok installed\"", pkg_name);
-                if (system(query_cmd) == 0) return 1;
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -345,9 +320,11 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "    [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXEC_PATH $EXTRA_FLAGS\\\"\" || EXEC_CMD=\"$EXEC_PATH $EXTRA_FLAGS\"\n", entry->is_gui);
         fprintf(fp, "    [ \"%d\" -eq 0 ] && TERM_FLAG=\"true\" || TERM_FLAG=\"false\"\n", entry->is_gui);
         fprintf(fp, "    fi\n");
+        fprintf(fp, "  if [ -x \"$EXEC_PATH\" ] || [[ \"$EXEC_CMD\" == *java* ]]; then\n");
         fprintf(fp, "    printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=$TERM_FLAG\\nCategories=%s;\\n\" > \"$FILE\"\n", entry->name, entry->category);
         fprintf(fp, "    chmod 755 \"$FILE\"\n");
         fprintf(fp, "    sync; xfdesktop --reload 2>/dev/null\n");
+        fprintf(fp, "  fi\n");
         fprintf(fp, "  fi\n");
         fprintf(fp, "fi\n");
 
