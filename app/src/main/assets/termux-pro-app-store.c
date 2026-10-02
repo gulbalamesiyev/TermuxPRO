@@ -484,9 +484,10 @@ int main(int argc, char *argv[]) {
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider,
         "window { background-color: #ffffff; }"
-        "list { background-color: #ffffff; border: none; }"
-        "row { padding: 6px; border-bottom: 1px solid #f0f0f0; background-color: #ffffff; box-shadow: none; border-radius: 0px; }"
-        "row:hover { background-color: #ffffff; box-shadow: none; border-color: transparent; }"
+        "list, listbox { background-color: #ffffff; border: none; outline: none; box-shadow: none; }"
+        "row, list row { padding: 8px; border: none; border-bottom: none; background-color: #ffffff; box-shadow: none; outline: none; border-radius: 0px; }"
+        "row:hover, row:selected, row:focus { background-color: #ffffff; border: none; border-bottom: none; box-shadow: none; outline: none; }"
+        "separator { border: none; background: transparent; min-height: 0px; }"
         "button { border-radius: 3px; padding: 4px 10px; background-image: none; background-color: #f5f5f5; border: 1px solid #cccccc; color: #333333; box-shadow: none; }"
         "button:hover { background-color: #e8e8e8; box-shadow: none; }"
         "button.suggested-action { background-color: #007acc; color: #ffffff; border: 1px solid #005999; box-shadow: none; }"
