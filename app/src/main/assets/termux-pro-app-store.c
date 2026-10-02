@@ -143,8 +143,14 @@ void update_filter() {
         if (!catalog[i].row_widget) continue;
         int match_cat = (strcmp(current_category, "ALL") == 0 || strcasecmp(catalog[i].category, current_category) == 0);
         int match_search = (strlen(search_text) == 0 || strcasestr(catalog[i].name, search_text) || strcasestr(catalog[i].desc, search_text));
-        if (match_cat && match_search) gtk_widget_show(catalog[i].row_widget);
-        else gtk_widget_hide(catalog[i].row_widget);
+        GtkWidget *parent_row = gtk_widget_get_parent(catalog[i].row_widget);
+        if (match_cat && match_search) {
+            gtk_widget_show(catalog[i].row_widget);
+            if (parent_row) gtk_widget_show(parent_row);
+        } else {
+            gtk_widget_hide(catalog[i].row_widget);
+            if (parent_row) gtk_widget_hide(parent_row);
+        }
     }
 }
 
@@ -547,8 +553,8 @@ int main(int argc, char *argv[]) {
     gtk_box_pack_start(GTK_BOX(load_box), widgets.loading_label, FALSE, FALSE, 0);
     gtk_stack_add_named(GTK_STACK(widgets.stack), load_box, "loading");
     gtk_spinner_start(GTK_SPINNER(widgets.spinner));
-    GtkWidget *catalog_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(catalog_vbox), 15);
+    GtkWidget *catalog_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(catalog_vbox), 5);
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_box_pack_start(GTK_BOX(catalog_vbox), scroll, TRUE, TRUE, 0);
     widgets.list_box = gtk_list_box_new();
