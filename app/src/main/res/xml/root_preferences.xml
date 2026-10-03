@@ -35,15 +35,9 @@
         app:fragment="com.termux.app.fragments.settings.TermuxWidgetPreferencesFragment"/>
 
     <Preference
-        app:key="about"
-        app:title="@string/about_preference_title"
+        app:key="about_termux_pro"
+        app:title="About Termux Pro"
+        app:summary="View Termux Pro information and credits"
         app:persistent="false"/>
-    <!-- app:layout="@layout/preference_markdown_text" -->
-
-    <Preference
-        app:key="donate"
-        app:title="@string/donate_preference_title"
-        app:persistent="false"
-        app:isPreferenceVisible="false"/>
 
 </PreferenceScreen>

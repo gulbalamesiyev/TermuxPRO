@@ -8,7 +8,6 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -58,21 +57,8 @@ public final class SessionCenterController {
         });
 
         rootView.findViewById(R.id.session_center_menu).setOnClickListener(v -> {
-            PopupMenu popup = new PopupMenu(mActivity, v);
-            popup.getMenu().add(0, 0, 0, "Settings");
-            popup.getMenu().add(0, 1, 1, "About Termux Pro");
-            
-            popup.setOnMenuItemClickListener(item -> {
-                if (item.getItemId() == 0) {
-                    ActivityUtils.startActivity(mActivity, new Intent(mActivity, SettingsActivity.class));
-                    mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                } else if (item.getItemId() == 1) {
-                    ActivityUtils.startActivity(mActivity, new Intent(mActivity, AboutActivity.class));
-                    mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                }
-                return true;
-            });
-            popup.show();
+            ActivityUtils.startActivity(mActivity, new Intent(mActivity, SettingsActivity.class));
+            mActivity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
     }
 

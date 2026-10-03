@@ -1,8 +1,8 @@
 package com.termux.app.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,12 +10,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.termux.R;
-import com.termux.shared.activities.ReportActivity;
-import com.termux.shared.file.FileUtils;
-import com.termux.shared.models.ReportInfo;
-import com.termux.app.models.UserAction;
-import com.termux.shared.interact.ShareUtils;
-import com.termux.shared.android.PackageUtils;
+import com.termux.shared.activity.media.AppCompatActivityUtils;
 import com.termux.shared.termux.settings.preferences.TermuxAPIAppSharedPreferences;
 import com.termux.shared.termux.settings.preferences.TermuxFloatAppSharedPreferences;
 import com.termux.shared.termux.settings.preferences.TermuxTaskerAppSharedPreferences;
@@ -73,8 +68,7 @@ public class SettingsActivity extends AppCompatActivity {
                     configureTermuxFloatPreference(context);
                     configureTermuxTaskerPreference(context);
                     configureTermuxWidgetPreference(context);
-                    configureAboutPreference(context);
-                    configureDonatePreference(context);
+                    configureAboutTermuxProPreference(context);
                 }
             }.start();
         }
@@ -115,57 +109,15 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
-        private void configureAboutPreference(@NonNull Context context) {
-            Preference aboutPreference = findPreference("about");
-            if (aboutPreference != null) {
-                aboutPreference.setOnPreferenceClickListener(preference -> {
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            String title = "About";
-
-                            StringBuilder aboutString = new StringBuilder();
-                            aboutString.append(TermuxUtils.getAppInfoMarkdownString(context, TermuxUtils.AppInfoMode.TERMUX_AND_PLUGIN_PACKAGES));
-                            aboutString.append("\n\n").append(AndroidUtils.getDeviceInfoMarkdownString(context, true));
-                            aboutString.append("\n\n").append(TermuxUtils.getImportantLinksMarkdownString(context));
-
-                            String userActionName = UserAction.ABOUT.getName();
-
-                            ReportInfo reportInfo = new ReportInfo(userActionName,
-                                TermuxConstants.TERMUX_APP.TERMUX_SETTINGS_ACTIVITY_NAME, title);
-                            reportInfo.setReportString(aboutString.toString());
-                            reportInfo.setReportSaveFileLabelAndPath(userActionName,
-                                Environment.getExternalStorageDirectory() + "/" +
-                                    FileUtils.sanitizeFileName(TermuxConstants.TERMUX_APP_NAME + "-" + userActionName + ".log", true, true));
-
-                            ReportActivity.startReportActivity(context, reportInfo);
-                        }
-                    }.start();
-
-                    return true;
-                });
-            }
-        }
-
-        private void configureDonatePreference(@NonNull Context context) {
-            Preference donatePreference = findPreference("donate");
-            if (donatePreference != null) {
-                String signingCertificateSHA256Digest = PackageUtils.getSigningCertificateSHA256DigestForPackage(context);
-                if (signingCertificateSHA256Digest != null) {
-                    // If APK is a Google Playstore release, then do not show the donation link
-                    // since Termux isn't exempted from the playstore policy donation links restriction
-                    // Check Fund solicitations: https://pay.google.com/intl/en_in/about/policy/
-                    String apkRelease = TermuxUtils.getAPKRelease(signingCertificateSHA256Digest);
-                    if (apkRelease == null || apkRelease.equals(TermuxConstants.APK_RELEASE_GOOGLE_PLAYSTORE_SIGNING_CERTIFICATE_SHA256_DIGEST)) {
-                        donatePreference.setVisible(false);
-                        return;
-                    } else {
-                        donatePreference.setVisible(true);
+        private void configureAboutTermuxProPreference(@NonNull Context context) {
+            Preference aboutTermuxProPreference = findPreference("about_termux_pro");
+            if (aboutTermuxProPreference != null) {
+                aboutTermuxProPreference.setOnPreferenceClickListener(preference -> {
+                    Intent intent = new Intent(context, AboutActivity.class);
+                    context.startActivity(intent);
+                    if (context instanceof AppCompatActivity) {
+                        ((AppCompatActivity) context).overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     }
-                }
-
-                donatePreference.setOnPreferenceClickListener(preference -> {
-                    ShareUtils.openUrl(context, TermuxConstants.TERMUX_DONATE_URL);
                     return true;
                 });
             }

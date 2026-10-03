@@ -25,7 +25,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2a0cd35b-e63c-4c72-b369-d7ac4133104c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.artifacts/xfce-app-store-temp" beforeDir="false" afterPath="$PROJECT_DIR$/.artifacts/xfce-app-store-temp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,7 +41,7 @@
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="15483" />
+    <option name="cachedIndexableFilesCount" value="15457" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[PhysicalDevice::serial=4DGAOZQ47TQKUGPJ]" />
   <component name="ExternalProjectsData">
@@ -88,7 +88,7 @@
     </system>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/xfce-app-store" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -308,7 +308,7 @@
       <map>
         <entry key="com.termux">
           <value>
-            <CheckInfo lastCheckTimestamp="1790405749060" />
+            <CheckInfo lastCheckTimestamp="1790958913562" />
           </value>
         </entry>
         <entry key="com.termux.shared.test">
@@ -318,7 +318,7 @@
         </entry>
         <entry key="com.termux.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1790405749059" />
+            <CheckInfo lastCheckTimestamp="1790958913562" />
           </value>
         </entry>
         <entry key="com.termux.x11.test">
