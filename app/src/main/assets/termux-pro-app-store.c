@@ -52,19 +52,16 @@ int is_app_installed_robust(AppEntry *app) {
         return 0;
     }
 
-    // 1. Fast, lightweight Desktop file check (No heavy external bash/grep loops on UI thread)
-    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, app->name);
-    if (access(path, F_OK) == 0) return 1;
+    // 1. APT / Dpkg Package Status Check (Primary source of truth for package installation state)
+    if (app->pkg[0] != '\0' && !strstr(app->pkg, " ")) {
+        char check_cmd[1024];
+        snprintf(check_cmd, sizeof(check_cmd), "dpkg-query -W -f='${Status}' \"%s\" 2>/dev/null | grep -q \"install ok installed\"", app->pkg);
+        if (system(check_cmd) == 0) return 1;
+        // If package is not installed via dpkg, return 0 immediately (do not rely on leftover desktop shortcuts)
+        return 0;
+    }
 
-    // Check lowercase version or exec/pkg filename in Desktop
-    char lower_name[128];
-    strncpy(lower_name, app->name, sizeof(lower_name) - 1);
-    lower_name[sizeof(lower_name) - 1] = '\0';
-    for(int i = 0; lower_name[i]; i++){ if(lower_name[i] >= 'A' && lower_name[i] <= 'Z') lower_name[i] += 32; else if(lower_name[i] == ' ' || lower_name[i] == '-') lower_name[i] = '_'; }
-    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, lower_name);
-    if (access(path, F_OK) == 0) return 1;
-
-    // 2. Binary Executable Check in $PREFIX/bin
+    // 2. Binary Executable Check in $PREFIX/bin (for standalone tools)
     if (app->exec[0] != '\0') {
         char cmd_exec[256];
         strncpy(cmd_exec, app->exec, 255); cmd_exec[255] = '\0';
@@ -73,6 +70,10 @@ int is_app_installed_robust(AppEntry *app) {
         snprintf(path, sizeof(path), "%s/bin/%s", prefix, cmd_exec);
         if (access(path, X_OK) == 0) return 1;
     }
+
+    // 3. Desktop file check as last resort
+    snprintf(path, sizeof(path), "%s/Desktop/%s.desktop", home, app->name);
+    if (access(path, F_OK) == 0) return 1;
 
     return 0;
 }
@@ -147,24 +148,13 @@ void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
     snprintf(cmd, sizeof(cmd),
              "DISPLAY=:1 xfce4-terminal --title \"Uninstalling %s\" -x bash -c ' "
              "pkill -9 -x apt 2>/dev/null; pkill -9 -x dpkg 2>/dev/null; rm -f /data/data/com.termux/files/usr/var/lib/dpkg/lock* /data/data/com.termux/files/usr/var/lib/apt/lists/lock 2>/dev/null; "
-             "echo \"Uninstalling %s...\"; RAW_PKG=\"%s\"; EXEC_NAME=\"%s\"; "
+             "dpkg --configure -a 2>/dev/null || true; "
+             "echo \"Uninstalling %s...\"; PKG_NAME=\"%s\"; EXEC_NAME=\"%s\"; "
              "if [ \"%s\" = \"Burp Suite\" ]; then rm -f \"$HOME/burp.jar\"; fi; "
-             "if echo \"$RAW_PKG\" | grep -q \"npm\"; then "
-             "  uninstall_cmd=${RAW_PKG/install/uninstall}; eval $uninstall_cmd; "
-             "else "
-             "  PKG_TO_UNINSTALL=\"\"; "
-             "  if [[ \"$RAW_PKG\" == *\"install -y \"* ]]; then "
-             "    PKG_TO_UNINSTALL=\"${RAW_PKG##*install -y }\"; "
-             "    PKG_TO_UNINSTALL=\"${PKG_TO_UNINSTALL%%[;&|]*}\"; "
-             "    PKG_TO_UNINSTALL=$(echo $PKG_TO_UNINSTALL | cut -d\" \" -f1); "
-             "  fi; "
-             "  [ -z \"$PKG_TO_UNINSTALL\" ] && PKG_TO_UNINSTALL=\"$EXEC_NAME\"; "
-             "  pkg uninstall -y \"$PKG_TO_UNINSTALL\" 2>/dev/null; "
-             "  [ \"$PKG_TO_UNINSTALL\" != \"$EXEC_NAME\" ] && pkg uninstall -y \"$EXEC_NAME\" 2>/dev/null; "
-             "fi; "
+             "apt remove -y \"$PKG_NAME\" 2>/dev/null || apt remove -y \"$EXEC_NAME\" 2>/dev/null || pkg remove -y \"$PKG_NAME\" 2>/dev/null; "
              "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null; EXEC_BASE=$(basename \"$EXEC_NAME\" 2>/dev/null | cut -d\" \" -f1); "
              "if [ -n \"$EXEC_BASE\" ] && [ \"$EXEC_BASE\" != \".\" ]; then for d in \"$HOME/Desktop\"/*.desktop; do [ -f \"$d\" ] && grep -qiE \"^Exec=(.*[/ ])?$EXEC_BASE( |%%|$)\" \"$d\" 2>/dev/null && rm -f \"$d\"; done; fi; "
-             "sync; xfdesktop --reload 2>/dev/null; touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; echo \"Done.\"; sleep 1' &",
+             "sync; xfdesktop --reload 2>/dev/null; touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; echo \"done\"; sleep 3' &",
              entry->name, entry->name, entry->pkg, entry->exec, entry->name, entry->name);
     system(cmd);
     refresh_ui(NULL);
@@ -186,7 +176,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "export HOME=\"${HOME:-/data/data/com.termux/files/home}\"\n");
         fprintf(fp, "echo \"Installing %s...\"\n", entry->name);
 
-        // Auto-resolve any background dpkg/apt locks
+        // Auto-resolve any background dpkg/apt locks and fix configure errors
         fprintf(fp, "clear_locks() {\n");
         fprintf(fp, "  local count=0\n");
         fprintf(fp, "  while [ $count -lt 3 ]; do\n");
@@ -198,6 +188,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "  pkill -9 -x \"dpkg\" 2>/dev/null || true\n");
         fprintf(fp, "  rm -f \"$PREFIX/var/lib/dpkg/lock\"* 2>/dev/null || true\n");
         fprintf(fp, "  rm -f \"$PREFIX/var/lib/apt/lists/lock\" 2>/dev/null || true\n");
+        fprintf(fp, "  dpkg --configure -a 2>/dev/null || true\n");
         fprintf(fp, "}\n");
         fprintf(fp, "clear_locks\n");
 
@@ -209,58 +200,67 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "fi\n");
 
         // Override 'pkg' command to bypass curl dependency and route directly to apt
-        fprintf(fp, "pkg() {\n");
-        fprintf(fp, "  local cmd=\"$1\"\n");
-        fprintf(fp, "  if [ \"$cmd\" = \"install\" ]; then\n");
-        fprintf(fp, "    shift\n");
-        fprintf(fp, "    local args=()\n");
-        fprintf(fp, "    for arg in \"$@\"; do\n");
-        fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
-        fprintf(fp, "    done\n");
-        fprintf(fp, "    apt install -y \"${args[@]}\"\n");
-        fprintf(fp, "  elif [ \"$cmd\" = \"uninstall\" ] || [ \"$cmd\" = \"remove\" ]; then\n");
-        fprintf(fp, "    shift\n");
-        fprintf(fp, "    local args=()\n");
-        fprintf(fp, "    for arg in \"$@\"; do\n");
-        fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
-        fprintf(fp, "    done\n");
-        fprintf(fp, "    apt remove -y \"${args[@]}\"\n");
-        fprintf(fp, "  elif [ \"$cmd\" = \"upgrade\" ]; then\n");
-        fprintf(fp, "    shift\n");
-        fprintf(fp, "    apt upgrade -y \"$@\"\n");
-        fprintf(fp, "  else\n");
-        fprintf(fp, "    command pkg \"$@\"\n");
-        fprintf(fp, "  fi\n");
-        fprintf(fp, "}\n");
-        fprintf(fp, "export -f pkg 2>/dev/null || true\n");
+    fprintf(fp, "pkg() {\n");
+    fprintf(fp, "  local cmd=\"$1\"\n");
+    fprintf(fp, "  if [ \"$cmd\" = \"install\" ]; then\n");
+    fprintf(fp, "    shift\n");
+    fprintf(fp, "    local args=()\n");
+    fprintf(fp, "    for arg in \"$@\"; do\n");
+    fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
+    fprintf(fp, "    done\n");
+    fprintf(fp, "    DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" \"${args[@]}\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n");
+    fprintf(fp, "    return ${PIPESTATUS[0]}\n");
+    fprintf(fp, "  elif [ \"$cmd\" = \"uninstall\" ] || [ \"$cmd\" = \"remove\" ]; then\n");
+    fprintf(fp, "    shift\n");
+    fprintf(fp, "    local args=()\n");
+    fprintf(fp, "    for arg in \"$@\"; do\n");
+    fprintf(fp, "      [ \"$arg\" != \"-y\" ] && args+=(\"$arg\")\n");
+    fprintf(fp, "    done\n");
+    fprintf(fp, "    DEBIAN_FRONTEND=noninteractive apt-get remove -y \"${args[@]}\" > /dev/null 2>&1\n");
+    fprintf(fp, "  elif [ \"$cmd\" = \"upgrade\" ]; then\n");
+    fprintf(fp, "    shift\n");
+    fprintf(fp, "    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \"$@\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n");
+    fprintf(fp, "    return ${PIPESTATUS[0]}\n");
+    fprintf(fp, "  else\n");
+    fprintf(fp, "    command pkg \"$@\"\n");
+    fprintf(fp, "  fi\n");
+    fprintf(fp, "}\n");
+    fprintf(fp, "export -f pkg 2>/dev/null || true\n");
 
-        // Ensure repos are enabled and updated
-        fprintf(fp, "pkg install -y x11-repo tur-repo glibc-repo 2>/dev/null\n");
-        fprintf(fp, "apt update\n");
+    // Ensure repos are enabled and updated
+    fprintf(fp, "pkg install -y x11-repo tur-repo glibc-repo > /dev/null 2>&1\n");
+    fprintf(fp, "apt-get update -y > /dev/null 2>&1\n");
 
-        // Execute the package command (Real Upgrade / Full-Upgrade for system runtimes to ensure latest version)
-        if (strstr(entry->pkg, "openjdk") || strstr(entry->pkg, "python") || strstr(entry->pkg, "git") || strstr(entry->pkg, "nodejs")) {
-            fprintf(fp, "echo \"Performing real latest version upgrade/install...\"\n");
-            if (strchr(entry->pkg, ' ') == NULL) {
-                fprintf(fp, "apt install --only-upgrade -y \"%s\" 2>/dev/null || apt install -y \"%s\"\n", entry->pkg, entry->pkg);
-            } else {
-                fprintf(fp, "%s\n", entry->pkg);
-            }
-        } else {
-            if (strchr(entry->pkg, ' ') == NULL) {
-                fprintf(fp, "pkg install -y \"%s\"\n", entry->pkg);
-            } else {
-                fprintf(fp, "%s\n", entry->pkg);
-            }
-        }
+    // Execute the package command (Real Upgrade / Full-Upgrade for system runtimes to ensure latest version)
+    if (strcmp(entry->name, "Burp Suite") == 0) {
+        fprintf(fp, "echo \"Installing OpenJDK and downloading Burp Suite Community JAR...\"\n");
+        fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-21 wget 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n");
+        fprintf(fp, "wget -c -O \"$HOME/burp.jar\" \"https://portswigger.net/burp/releases/download?product=community&version=2024.2.1.3&type=Jar\"\n");
         fprintf(fp, "RET=$?\n");
+    } else if (strstr(entry->pkg, "openjdk") || strstr(entry->pkg, "python") || strstr(entry->pkg, "git") || strstr(entry->pkg, "nodejs")) {
+        fprintf(fp, "echo \"Performing real latest version upgrade/install...\"\n");
+        if (strchr(entry->pkg, ' ') == NULL) {
+            fprintf(fp, "apt install --only-upgrade -y \"%s\" > /dev/null 2>&1 || apt install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg, entry->pkg);
+        } else {
+            fprintf(fp, "%s\n", entry->pkg);
+        }
+    } else {
+        if (strchr(entry->pkg, ' ') == NULL) {
+            fprintf(fp, "pkg install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg);
+            fprintf(fp, "RET=${PIPESTATUS[0]}\n");
+        } else {
+            fprintf(fp, "%s\n", entry->pkg);
+            fprintf(fp, "RET=$?\n");
+        }
+    }
 
-        // Shortcut creation logic (Skip shortcuts for pure core system runtimes like Java, Python, Git, Node.js)
-        fprintf(fp, "if [ $RET -eq 0 ]; then\n");
-        fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk|python|git|nodejs\" || echo \"%s\" | grep -qiE \"^Java|^Python|^Git|^Node\"; then\n", entry->pkg, entry->name);
-        fprintf(fp, "    echo \"Core system runtime installed successfully. Skipping Desktop shortcut creation.\"\n");
-        fprintf(fp, "  else\n");
-        fprintf(fp, "    echo \"Creating Shortcut...\"\n");
+    // Shortcut creation logic (Skip shortcuts for pure core system runtimes like Java, Python, Git, Node.js)
+    fprintf(fp, "if [ $RET -eq 0 ]; then\n");
+    fprintf(fp, "  echo \"installing was successfully\"\n");
+    fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk|python|git|nodejs\" || echo \"%s\" | grep -qiE \"^Java|^Python|^Git|^Node\"; then\n", entry->pkg, entry->name);
+    fprintf(fp, "    echo \"Core system runtime installed successfully. Skipping Desktop shortcut creation.\"\n");
+    fprintf(fp, "  else\n");
+    fprintf(fp, "    echo \"Creating Shortcut...\"\n");
         fprintf(fp, "    CATALOG_FILE=\"$HOME/Desktop/%s.desktop\"\n", entry->name);
         fprintf(fp, "    EXEC_RAW=\"%s\"\n", entry->exec);
         fprintf(fp, "    EXEC_BIN_NAME=$(echo \"$EXEC_RAW\" | cut -d' ' -f1)\n");
@@ -274,15 +274,8 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "    EXEC_BASE=$(basename \"$EXEC_PATH\" 2>/dev/null | cut -d\" \" -f1)\n");
 
         fprintf(fp, "  pick_native() {\n");
-        fprintf(fp, "    local d bn\n");
-        fprintf(fp, "    for d in \"$PREFIX/share/applications\"/*.desktop \"$HOME/.local/share/applications\"/*.desktop; do\n");
-        fprintf(fp, "      [ -f \"$d\" ] || continue\n");
-        fprintf(fp, "      bn=$(basename \"$d\" .desktop)\n");
-        fprintf(fp, "      if [ \"$bn\" = \"$EXEC_BASE\" ] || [ \"$bn\" = \"%s\" ] || [ \"$bn\" = \"%s\" ] || grep -qiE \"^Name=%s$\" \"$d\" 2>/dev/null; then\n", entry->name, entry->name, entry->name);
-        fprintf(fp, "        NATIVE_DESKTOP=\"$d\"\n");
-        fprintf(fp, "        return\n");
-        fprintf(fp, "      fi\n");
-        fprintf(fp, "    done\n");
+        fprintf(fp, "    # Do not copy native desktop files to Desktop to avoid %U or duplicate script generation conflicts\n");
+        fprintf(fp, "    NATIVE_DESKTOP=\"\"\n");
         fprintf(fp, "  }\n");
         fprintf(fp, "  pick_native\n");
 
@@ -304,32 +297,54 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "  find_icon \"%s\"\n", entry->icon);
 
         fprintf(fp, "  if [ -n \"$NATIVE_DESKTOP\" ]; then\n");
+        fprintf(fp, "    echo \"Removing old shortcut...\"\n");
         fprintf(fp, "    rm -f \"$HOME/Desktop/$(basename \"$NATIVE_DESKTOP\")\"\n");
+        fprintf(fp, "    rm -f \"$HOME/Desktop/%s.desktop\"\n", entry->name);
+        fprintf(fp, "    for old_d in \"$HOME/Desktop\"/*.desktop; do\n");
+        fprintf(fp, "      [ -f \"$old_d\" ] || continue\n");
+        fprintf(fp, "      if grep -qiE \"^Name=%s$\" \"$old_d\" 2>/dev/null || grep -qiE \"^Exec=.*%s.*\" \"$old_d\" 2>/dev/null; then\n", entry->name, entry->exec);
+        fprintf(fp, "        rm -f \"$old_d\"\n");
+        fprintf(fp, "      fi\n");
+        fprintf(fp, "    done\n");
+        fprintf(fp, "    sync; xfdesktop --reload 2>/dev/null\n");
         fprintf(fp, "  fi\n");
         fprintf(fp, "  FILE=\"$CATALOG_FILE\"\n");
         fprintf(fp, "  rm -f \"$FILE\"\n");
         fprintf(fp, "  EXTRA_FLAGS=\"\"\n");
         fprintf(fp, "  [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_FLAGS=\"--no-sandbox\"\n");
-        fprintf(fp, "  if [[ \"$EXEC_BASE\" == *\"vlc\"* ]]; then\n");
-        fprintf(fp, "    EXEC_CMD=\"$EXEC_PATH --wrapper-2.0\"\n");
+        fprintf(fp, "  if [[ \"$EXEC_BASE\" == *\"vlc\"* ]] || [[ \"%s\" == \"VLC Player\" ]]; then\n", entry->name);
+        fprintf(fp, "    EXEC_CMD=\"vlc\"\n");
         fprintf(fp, "    TERM_FLAG=\"false\"\n");
+        fprintf(fp, "  elif [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]]; then\n", entry->name);
+        fprintf(fp, "    EXTRA_FLAGS=\"--no-sandbox\"\n");
+        fprintf(fp, "    [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXEC_PATH $EXTRA_FLAGS\\\"\" || EXEC_CMD=\"$EXEC_PATH $EXTRA_FLAGS\"\n", entry->is_gui);
+        fprintf(fp, "    [ \"%d\" -eq 0 ] && TERM_FLAG=\"true\" || TERM_FLAG=\"false\"\n", entry->is_gui);
         fprintf(fp, "  elif [[ \"%s\" == *\"burp\"* ]] || [[ \"%s\" == *\"Burp\"* ]] || [[ \"%s\" == *\"java\"* ]]; then\n", entry->name, entry->name, entry->exec);
         fprintf(fp, "    EXEC_CMD=\"java -jar /data/data/com.termux/files/home/burp.jar\"\n");
         fprintf(fp, "    TERM_FLAG=\"false\"\n");
         fprintf(fp, "  else\n");
         fprintf(fp, "    [ \"%d\" -eq 0 ] && EXEC_CMD=\"xfce4-terminal --hold -e \\\"$EXEC_PATH $EXTRA_FLAGS\\\"\" || EXEC_CMD=\"$EXEC_PATH $EXTRA_FLAGS\"\n", entry->is_gui);
         fprintf(fp, "    [ \"%d\" -eq 0 ] && TERM_FLAG=\"true\" || TERM_FLAG=\"false\"\n", entry->is_gui);
-        fprintf(fp, "    fi\n");
-        fprintf(fp, "  if [ -x \"$EXEC_PATH\" ] || [[ \"$EXEC_CMD\" == *java* ]]; then\n");
-        fprintf(fp, "    printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=$TERM_FLAG\\nCategories=%s;\\n\" > \"$FILE\"\n", entry->name, entry->category);
-        fprintf(fp, "    chmod 755 \"$FILE\"\n");
-        fprintf(fp, "    sync; xfdesktop --reload 2>/dev/null\n");
         fprintf(fp, "  fi\n");
+        fprintf(fp, "  if [[ \"%s\" == \"Telegram\" ]]; then\n", entry->name);
+        fprintf(fp, "    EXEC_PATH=\"$PREFIX/bin/telegram-desktop\"\n");
+        fprintf(fp, "    EXEC_CMD=\"Telegram\"\n");
+        fprintf(fp, "  fi\n");
+        fprintf(fp, "  printf \"[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=%s\\nExec=$EXEC_CMD\\nIcon=${RESOLVED_ICON:-utilities-terminal}\\nTerminal=$TERM_FLAG\\nCategories=%s;\\n\" > \"$FILE\"\n", entry->name, entry->category);
+        fprintf(fp, "  chmod 755 \"$FILE\"\n");
+        fprintf(fp, "  sync; xfdesktop --reload 2>/dev/null\n");
         fprintf(fp, "  fi\n");
         fprintf(fp, "fi\n");
 
         fprintf(fp, "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null\n");
-        fprintf(fp, "if [ $RET -eq 0 ]; then echo \"Done.\"; sleep 1; else echo \"FAILED\"; read -p \"Press Enter to close...\"; fi\n");
+        fprintf(fp, "if [ $RET -eq 0 ]; then\n");
+        fprintf(fp, "  echo \"installing was successfully\"\n");
+        fprintf(fp, "  echo \"done\"\n");
+        fprintf(fp, "  sleep 3\n");
+        fprintf(fp, "else\n");
+        fprintf(fp, "  echo \"FAILED\"\n");
+        fprintf(fp, "  read -p \"Press Enter to close...\"\n");
+        fprintf(fp, "fi\n");
         fclose(fp);
         chmod(script_path, 0755);
     }
