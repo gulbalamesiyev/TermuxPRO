@@ -237,16 +237,18 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-21 wget 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n");
         fprintf(fp, "wget -c -O \"$HOME/burp.jar\" \"https://portswigger.net/burp/releases/download?product=community&version=2024.2.1.3&type=Jar\"\n");
         fprintf(fp, "RET=$?\n");
-    } else if (strstr(entry->pkg, "openjdk") || strstr(entry->pkg, "python") || strstr(entry->pkg, "git") || strstr(entry->pkg, "nodejs")) {
+    } else if (strstr(entry->pkg, "openjdk") || strcmp(entry->name, "Python 3") == 0 || strcmp(entry->name, "Node.js") == 0 || strstr(entry->pkg, "python") || strstr(entry->pkg, "nodejs")) {
         fprintf(fp, "echo \"Performing real latest version upgrade/install...\"\n");
-        if (strchr(entry->pkg, ' ') == NULL) {
-            fprintf(fp, "apt install --only-upgrade -y \"%s\" > /dev/null 2>&1 || apt install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg, entry->pkg);
+        if (strcmp(entry->name, "Java 21 (OpenJDK)") == 0) {
+            fprintf(fp, "JDK_PKG=$(pkg search openjdk | grep -oE 'openjdk-[0-9]+' | sort -V | tail -n 1)\n");
+            fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade ${JDK_PKG:-openjdk-21} 2>/dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y ${JDK_PKG:-openjdk-21} 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n");
         } else {
-            fprintf(fp, "%s\n", entry->pkg);
+            fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade \"%s\" 2>/dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg, entry->pkg);
         }
+        fprintf(fp, "RET=${PIPESTATUS[0]}\n");
     } else {
         if (strchr(entry->pkg, ' ') == NULL) {
-            fprintf(fp, "pkg install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg);
+            fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y \"%s\" 2>&1 | grep -E \"^Get:|^Fetched|^Err:\"\n", entry->pkg);
             fprintf(fp, "RET=${PIPESTATUS[0]}\n");
         } else {
             fprintf(fp, "%s\n", entry->pkg);
