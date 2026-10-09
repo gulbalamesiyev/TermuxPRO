@@ -342,7 +342,11 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "if [ $RET -eq 0 ]; then\n");
         fprintf(fp, "  echo \"installing was successfully\"\n");
         fprintf(fp, "  echo \"done\"\n");
-        fprintf(fp, "  sleep 3\n");
+        fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk|python|git|nodejs\" || echo \"%s\" | grep -qiE \"^Java|^Python|^Git|^Node\"; then\n", entry->pkg, entry->name);
+        fprintf(fp, "    read -p \"Press Enter to close...\"\n");
+        fprintf(fp, "  else\n");
+        fprintf(fp, "    sleep 3\n");
+        fprintf(fp, "  fi\n");
         fprintf(fp, "else\n");
         fprintf(fp, "  echo \"FAILED\"\n");
         fprintf(fp, "  read -p \"Press Enter to close...\"\n");

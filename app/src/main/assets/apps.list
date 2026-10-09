@@ -1,4 +1,4 @@
-openjdk-21|Java 21 (OpenJDK)|Java Development Kit and Runtime Environment|JDK_PKG=$(pkg search openjdk | grep -oE 'openjdk-[0-9]+' | sort -V | tail -n 1); pkg install -y ${JDK_PKG:-openjdk-21}|java|Dev|0
+openjdk-21|Java 21 (OpenJDK)|Java Development Kit and Runtime Environment|openjdk-21|java|Dev|0
 python|Python 3|Python Programming Language & Pip|python|python|Dev|0
 git|Git|Fast, scalable, distributed revision control system|git|git|Dev|0
 nodejs|Node.js|JavaScript runtime built on V8|nodejs|node|Dev|0
