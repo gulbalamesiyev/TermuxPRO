@@ -57,42 +57,54 @@ void sanitize_filename(const char *src, char *dst, size_t max_len) {
 int is_app_in_queue(AppEntry *app) {
     char safe_name[128];
     sanitize_filename(app->name, safe_name, sizeof(safe_name));
-    DIR *dir = opendir("/data/data/com.termux/files/usr/var/lib/termux-pro/queue");
-    if (!dir) return 0;
+    FILE *fq = fopen("/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt", "r");
+    if (!fq) return 0;
+    char line[512];
     int found = 0;
-    struct dirent *ent;
-    while ((ent = readdir(dir)) != NULL) {
-        if (strstr(ent->d_name, safe_name) != NULL) {
+    while (fgets(line, sizeof(line), fq)) {
+        if (strstr(line, safe_name) != NULL) {
             found = 1;
             break;
         }
     }
-    closedir(dir);
+    fclose(fq);
     return found;
 }
 
-void ensure_queue_daemon_running() {
-    system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro/queue");
-    FILE *daemon_fp = fopen("/data/data/com.termux/files/usr/bin/termux-pro-queue-daemon", "w");
-    if (daemon_fp) {
-        fprintf(daemon_fp, "#!/bin/bash\n");
-        fprintf(daemon_fp, "QUEUE_DIR=\"/data/data/com.termux/files/usr/var/lib/termux-pro/queue\"\n");
-        fprintf(daemon_fp, "mkdir -p \"$QUEUE_DIR\"\n");
-        fprintf(daemon_fp, "while true; do\n");
-        fprintf(daemon_fp, "  task=$(ls -1 \"$QUEUE_DIR\"/*.sh 2>/dev/null | head -n 1)\n");
-        fprintf(daemon_fp, "  if [ -n \"$task\" ] && [ -f \"$task\" ]; then\n");
-        fprintf(daemon_fp, "    DISPLAY=:1 xfce4-terminal --title \"App Store Task\" -x bash \"$task\"\n");
-        fprintf(daemon_fp, "    sleep 3\n");
-        fprintf(daemon_fp, "    rm -f \"$task\"\n");
-        fprintf(daemon_fp, "    touch \"$HOME/.cache/termux-pro-install/.refresh_ui\"\n");
-        fprintf(daemon_fp, "  else\n");
-        fprintf(daemon_fp, "    sleep 1\n");
-        fprintf(daemon_fp, "  fi\n");
-        fprintf(daemon_fp, "done\n");
-        fclose(daemon_fp);
-        system("chmod 755 /data/data/com.termux/files/usr/bin/termux-pro-queue-daemon");
+void run_or_queue_task(const char *script_path, const char *app_name) {
+    system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro");
+
+    FILE *fp = fopen(script_path, "a");
+    if (fp) {
+        fprintf(fp, "echo \"Task completed. Waiting 3 seconds before next queue item...\"\n");
+        fprintf(fp, "sleep 3\n");
+        fprintf(fp, "rm -f /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock\n");
+        fprintf(fp, "QUEUE_FILE=\"/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt\"\n");
+        fprintf(fp, "if [ -f \"$QUEUE_FILE\" ]; then\n");
+        fprintf(fp, "  next_task=$(head -n 1 \"$QUEUE_FILE\")\n");
+        fprintf(fp, "  sed -i '1d' \"$QUEUE_FILE\"\n");
+        fprintf(fp, "  if [ -n \"$next_task\" ] && [ -f \"$next_task\" ]; then\n");
+        fprintf(fp, "    touch /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock\n");
+        fprintf(fp, "    DISPLAY=:1 xfce4-terminal --title \"App Store Task\" -x bash \"$next_task\" &\n");
+        fprintf(fp, "  fi\n");
+        fprintf(fp, "fi\n");
+        fprintf(fp, "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\"\n");
+        fclose(fp);
     }
-    system("pgrep -f termux-pro-queue-daemon >/dev/null || (nohup termux-pro-queue-daemon >/dev/null 2>&1 &)");
+
+    struct stat st;
+    if (stat("/data/data/com.termux/files/usr/var/lib/termux-pro/install.lock", &st) == 0) {
+        FILE *fq = fopen("/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt", "a");
+        if (fq) {
+            fprintf(fq, "%s\n", script_path);
+            fclose(fq);
+        }
+    } else {
+        system("touch /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock");
+        char cmd[1024];
+        snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal --title \"Task: %s\" -x bash \"%s\" &", app_name, script_path);
+        system(cmd);
+    }
 }
 
 int is_app_installed_robust(AppEntry *app) {
@@ -225,7 +237,7 @@ void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
         fclose(fp);
         chmod(script_path, 0755);
     }
-    ensure_queue_daemon_running();
+    run_or_queue_task(script_path, entry->name);
     refresh_ui(NULL);
 }
 
@@ -441,7 +453,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         chmod(script_path, 0755);
     }
 
-    ensure_queue_daemon_running();
+    run_or_queue_task(script_path, entry->name);
     refresh_ui(NULL);
 }
 
