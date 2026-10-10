@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
 
 typedef struct {
     char icon[128];
@@ -38,6 +40,60 @@ const char *LIST_URL_MAIN = "https://raw.githubusercontent.com/gulbalamesiyev/xf
 const char *LIST_URL_MASTER = "https://raw.githubusercontent.com/gulbalamesiyev/xfce-app-store/master/apps.list";
 const char *LOCAL_PATH = "/data/data/com.termux/files/usr/var/lib/termux-pro/apps.list";
 char *current_category = "ALL";
+
+void sanitize_filename(const char *src, char *dst, size_t max_len) {
+    size_t i = 0;
+    while (*src && i < max_len - 1) {
+        char c = *src++;
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+            dst[i++] = c;
+        } else {
+            dst[i++] = '_';
+        }
+    }
+    dst[i] = '\0';
+}
+
+int is_app_in_queue(AppEntry *app) {
+    char safe_name[128];
+    sanitize_filename(app->name, safe_name, sizeof(safe_name));
+    DIR *dir = opendir("/data/data/com.termux/files/usr/var/lib/termux-pro/queue");
+    if (!dir) return 0;
+    int found = 0;
+    struct dirent *ent;
+    while ((ent = readdir(dir)) != NULL) {
+        if (strstr(ent->d_name, safe_name) != NULL) {
+            found = 1;
+            break;
+        }
+    }
+    closedir(dir);
+    return found;
+}
+
+void ensure_queue_daemon_running() {
+    system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro/queue");
+    FILE *daemon_fp = fopen("/data/data/com.termux/files/usr/bin/termux-pro-queue-daemon", "w");
+    if (daemon_fp) {
+        fprintf(daemon_fp, "#!/bin/bash\n");
+        fprintf(daemon_fp, "QUEUE_DIR=\"/data/data/com.termux/files/usr/var/lib/termux-pro/queue\"\n");
+        fprintf(daemon_fp, "mkdir -p \"$QUEUE_DIR\"\n");
+        fprintf(daemon_fp, "while true; do\n");
+        fprintf(daemon_fp, "  task=$(ls -1 \"$QUEUE_DIR\"/*.sh 2>/dev/null | head -n 1)\n");
+        fprintf(daemon_fp, "  if [ -n \"$task\" ] && [ -f \"$task\" ]; then\n");
+        fprintf(daemon_fp, "    DISPLAY=:1 xfce4-terminal --title \"App Store Task\" -x bash \"$task\"\n");
+        fprintf(daemon_fp, "    sleep 3\n");
+        fprintf(daemon_fp, "    rm -f \"$task\"\n");
+        fprintf(daemon_fp, "    touch \"$HOME/.cache/termux-pro-install/.refresh_ui\"\n");
+        fprintf(daemon_fp, "  else\n");
+        fprintf(daemon_fp, "    sleep 1\n");
+        fprintf(daemon_fp, "  fi\n");
+        fprintf(daemon_fp, "done\n");
+        fclose(daemon_fp);
+        system("chmod 755 /data/data/com.termux/files/usr/bin/termux-pro-queue-daemon");
+    }
+    system("pgrep -f termux-pro-queue-daemon >/dev/null || (nohup termux-pro-queue-daemon >/dev/null 2>&1 &)");
+}
 
 int is_app_installed_robust(AppEntry *app) {
     const char *home = getenv("HOME");
@@ -144,19 +200,32 @@ void on_category_clicked(GtkButton *btn, gpointer data) {
 void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
     if (!data) return;
     AppEntry *entry = (AppEntry*)data;
-    char cmd[4096];
-    snprintf(cmd, sizeof(cmd),
-             "DISPLAY=:1 xfce4-terminal --title \"Uninstalling %s\" -x bash -c ' "
-             "pkill -9 -x apt 2>/dev/null; pkill -9 -x dpkg 2>/dev/null; rm -f /data/data/com.termux/files/usr/var/lib/dpkg/lock* /data/data/com.termux/files/usr/var/lib/apt/lists/lock 2>/dev/null; "
-             "dpkg --configure -a 2>/dev/null || true; "
-             "echo \"Uninstalling %s...\"; PKG_NAME=\"%s\"; EXEC_NAME=\"%s\"; "
-             "if [ \"%s\" = \"Burp Suite\" ]; then rm -f \"$HOME/burp.jar\"; fi; "
-             "apt remove -y \"$PKG_NAME\" 2>/dev/null || apt remove -y \"$EXEC_NAME\" 2>/dev/null || pkg remove -y \"$PKG_NAME\" 2>/dev/null; "
-             "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null; EXEC_BASE=$(basename \"$EXEC_NAME\" 2>/dev/null | cut -d\" \" -f1); "
-             "if [ -n \"$EXEC_BASE\" ] && [ \"$EXEC_BASE\" != \".\" ]; then for d in \"$HOME/Desktop\"/*.desktop; do [ -f \"$d\" ] && grep -qiE \"^Exec=(.*[/ ])?$EXEC_BASE( |%%|$)\" \"$d\" 2>/dev/null && rm -f \"$d\"; done; fi; "
-             "sync; xfdesktop --reload 2>/dev/null; touch \"$HOME/.cache/termux-pro-install/.refresh_ui\" 2>/dev/null; echo \"done\"; sleep 3' &",
-             entry->name, entry->name, entry->pkg, entry->exec, entry->name, entry->name);
-    system(cmd);
+
+    char safe_name[128];
+    sanitize_filename(entry->name, safe_name, sizeof(safe_name));
+    char script_path[512];
+    snprintf(script_path, sizeof(script_path), "/data/data/com.termux/files/usr/var/lib/termux-pro/queue/%ld_%s_uninstall.sh", (long)time(NULL), safe_name);
+
+    FILE *fp = fopen(script_path, "w");
+    if (fp) {
+        fprintf(fp, "#!/bin/bash\n");
+        fprintf(fp, "export PREFIX=/data/data/com.termux/files/usr\n");
+        fprintf(fp, "export PATH=\"$PREFIX/bin:$PATH\"\n");
+        fprintf(fp, "export HOME=\"${HOME:-/data/data/com.termux/files/home}\"\n");
+        fprintf(fp, "pkill -9 -x apt 2>/dev/null; pkill -9 -x dpkg 2>/dev/null; rm -f /data/data/com.termux/files/usr/var/lib/dpkg/lock* /data/data/com.termux/files/usr/var/lib/apt/lists/lock 2>/dev/null;\n");
+        fprintf(fp, "dpkg --configure -a 2>/dev/null || true;\n");
+        fprintf(fp, "echo \"Uninstalling %s...\";\n", entry->name);
+        if (strcmp(entry->name, "Burp Suite") == 0) {
+            fprintf(fp, "rm -f \"$HOME/burp.jar\";\n");
+        }
+        fprintf(fp, "apt remove -y \"%s\" 2>/dev/null || apt remove -y \"%s\" 2>/dev/null || pkg remove -y \"%s\" 2>/dev/null;\n", entry->pkg, entry->exec, entry->pkg);
+        fprintf(fp, "rm -f \"$HOME/Desktop/%s.desktop\" 2>/dev/null;\n", entry->name);
+        fprintf(fp, "sync; xfdesktop --reload 2>/dev/null;\n");
+        fprintf(fp, "echo \"done\";\n");
+        fclose(fp);
+        chmod(script_path, 0755);
+    }
+    ensure_queue_daemon_running();
     refresh_ui(NULL);
 }
 
@@ -164,9 +233,11 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
     if (!data) return;
     AppEntry *entry = (AppEntry*)data;
 
-    // Create a temporary installer script to avoid shell quoting issues
+    // Create installer script in queue directory
+    char safe_name[128];
+    sanitize_filename(entry->name, safe_name, sizeof(safe_name));
     char script_path[512];
-    snprintf(script_path, sizeof(script_path), "/data/data/com.termux/files/usr/tmp/app_install_%s.sh", entry->name);
+    snprintf(script_path, sizeof(script_path), "/data/data/com.termux/files/usr/var/lib/termux-pro/queue/%ld_%s.sh", (long)time(NULL), safe_name);
 
     FILE *fp = fopen(script_path, "w");
     if (fp) {
@@ -370,9 +441,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         chmod(script_path, 0755);
     }
 
-    char cmd[1024];
-    snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal --title \"Installing %s\" -x bash \"%s\" &", entry->name, script_path);
-    system(cmd);
+    ensure_queue_daemon_running();
     refresh_ui(NULL);
 }
 
