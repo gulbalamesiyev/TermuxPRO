@@ -25,6 +25,7 @@ import com.termux.app.activities.SettingsActivity;
 import com.termux.app.desktop.DesktopRendererLauncher;
 import com.termux.app.desktop.DesktopResourceManager;
 import com.termux.app.desktop.DesktopSessionOrchestrator;
+import com.termux.app.desktop.DistroSelectorDialog;
 import com.termux.shared.activity.ActivityUtils;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
@@ -33,6 +34,7 @@ import com.termux.x11.DesktopNavigationState;
 import com.termux.x11.MainActivity;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class SessionCenterController {
@@ -42,6 +44,8 @@ public final class SessionCenterController {
     private final SessionAdapter mAdapter;
 
     private String mLastDownloadError = null;
+    private int mCurrentTab = 0; // 0: Terminal, 1: Desktop
+    private List<TermuxSession> mAllSessions;
 
     public SessionCenterController(TermuxActivity activity, View rootView) {
         this.mActivity = activity;
@@ -52,10 +56,73 @@ public final class SessionCenterController {
         this.mAdapter = new SessionAdapter();
         this.mRecyclerView.setAdapter(mAdapter);
 
-        rootView.findViewById(R.id.session_center_new_session).setOnClickListener(v -> {
-            mActivity.getTermuxTerminalSessionClient().addNewSession(false, null);
-            setVisible(true, false);
+        TextView tabTerminal = rootView.findViewById(R.id.tab_terminal);
+        TextView tabDesktop = rootView.findViewById(R.id.tab_desktop);
+        View btnTerminal = rootView.findViewById(R.id.session_center_new_session_terminal);
+        View btnDesktop = rootView.findViewById(R.id.session_center_new_session_desktop);
+
+        tabTerminal.setOnClickListener(v -> {
+            mCurrentTab = 0;
+            tabTerminal.setTextColor(mActivity.getResources().getColor(R.color.pro_cyan));
+            tabDesktop.setTextColor(mActivity.getResources().getColor(R.color.pro_text_secondary));
+            btnTerminal.setVisibility(View.VISIBLE);
+            btnDesktop.setVisibility(View.GONE);
+            updateFilteredSessions();
         });
+
+        tabDesktop.setOnClickListener(v -> {
+            mCurrentTab = 1;
+            tabDesktop.setTextColor(mActivity.getResources().getColor(R.color.pro_cyan));
+            tabTerminal.setTextColor(mActivity.getResources().getColor(R.color.pro_text_secondary));
+            btnTerminal.setVisibility(View.GONE);
+            btnDesktop.setVisibility(View.VISIBLE);
+            updateFilteredSessions();
+        });
+
+        if (btnTerminal != null) {
+            btnTerminal.setOnClickListener(v -> {
+                mActivity.getTermuxTerminalSessionClient().addNewSession(false, null);
+                setVisible(true, false);
+            });
+        }
+
+        if (btnDesktop != null) {
+            btnDesktop.setOnClickListener(v -> {
+                DistroSelectorDialog.show(mActivity, (distro, de) -> {
+                    TermuxSession existing = findDesktopOwner();
+                    if (existing != null) {
+                        if (existing.getTerminalSession().isRunning()) {
+                            DesktopSessionOrchestrator.promoteAndStartInExistingSession(existing);
+                            mActivity.startDesktopBootProgress();
+                            setVisible(true, false);
+                            return;
+                        } else {
+                            mActivity.getTermuxService().removeTermuxSession(existing.getTerminalSession());
+                        }
+                    }
+                    if (DesktopSessionOrchestrator.areResourcesInstalled()) {
+                        DesktopSessionOrchestrator.start(mActivity.getTermuxService(), distro, de);
+                        mActivity.startDesktopBootProgress();
+                        setVisible(true, false);
+                    } else {
+                        TermuxService service = mActivity.getTermuxService();
+                        if (service != null) {
+                            TermuxSession resSession = service.createTermuxSession(
+                                TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash",
+                                new String[] { "-lc", "echo 'Initializing resources...'" },
+                                null,
+                                TermuxConstants.TERMUX_HOME_DIR_PATH,
+                                false,
+                                "Resource Installer"
+                            );
+                            if (resSession != null) {
+                                showDownloadResourcesDialog(resSession);
+                            }
+                        }
+                    }
+                });
+            });
+        }
 
         rootView.findViewById(R.id.session_center_menu).setOnClickListener(v -> {
             ActivityUtils.startActivity(mActivity, new Intent(mActivity, SettingsActivity.class));
@@ -64,6 +131,7 @@ public final class SessionCenterController {
     }
 
     public void setSessions(List<TermuxSession> sessions) {
+        this.mAllSessions = sessions;
         // Validate active owner still exists
         String activeHandle = DesktopNavigationState.getActiveDesktopOwnerHandle();
         if (activeHandle != null && sessions != null) {
@@ -77,7 +145,24 @@ public final class SessionCenterController {
                 DesktopNavigationState.clearDesktopOwner(activeHandle);
             }
         }
-        mAdapter.setSessions(sessions);
+        updateFilteredSessions();
+    }
+
+    private void updateFilteredSessions() {
+        if (mAllSessions == null) {
+            mAdapter.setSessions(null);
+            return;
+        }
+        List<TermuxSession> filtered = new ArrayList<>();
+        for (TermuxSession s : mAllSessions) {
+            boolean isDesktop = DesktopSessionOrchestrator.isDesktopSession(s);
+            if (mCurrentTab == 1 && isDesktop) {
+                filtered.add(s);
+            } else if (mCurrentTab == 0 && !isDesktop) {
+                filtered.add(s);
+            }
+        }
+        mAdapter.setSessions(filtered);
     }
 
     public void setVisible(boolean visible) {

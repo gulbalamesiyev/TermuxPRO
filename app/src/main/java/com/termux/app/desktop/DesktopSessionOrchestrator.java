@@ -44,6 +44,10 @@ public final class DesktopSessionOrchestrator {
     }
 
     private static String buildDesktopStartCommand(String desktopLaunchToken) {
+        return buildDesktopStartCommand(desktopLaunchToken, null, "startxfce4");
+    }
+
+    private static String buildDesktopStartCommand(String desktopLaunchToken, String distro, String desktopEnvironment) {
         String PREFIX = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
         String logHandle = DesktopNavigationState.getActiveInstallLogHandle();
         String logCapture = "";
@@ -52,6 +56,14 @@ public final class DesktopSessionOrchestrator {
                     .replace("'", "'\"'\"'");
             logCapture = "exec > >(tee -a '" + logFile + "') 2>&1; ";
         }
+
+        String xstartupInner;
+        if (distro != null && !distro.isEmpty()) {
+            xstartupInner = "pkg install -y proot-distro >/dev/null 2>&1 || true; proot-distro install " + distro + " >/dev/null 2>&1 || true; exec proot-distro login " + distro + " --shared-tmp -- env DISPLAY=:1 HOME=/root TERM=xterm-256color PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin " + (desktopEnvironment != null ? desktopEnvironment : "startxfce4");
+        } else {
+            xstartupInner = "export PATH=" + PREFIX + "/bin:/data/data/com.termux/files/usr/bin:$PATH; export XDG_DATA_DIRS=" + PREFIX + "/share:$XDG_DATA_DIRS; export DISPLAY=:1; export QT_QPA_PLATFORM=xcb; export QT_X11_NO_MITSHM=1; exec dbus-launch --exit-with-session " + (desktopEnvironment != null ? desktopEnvironment : "startxfce4");
+        }
+
         return "set +H; set +e; " + logCapture +
             "export TERMUX_PRO_DESKTOP_ID=\"" + DESKTOP_MARKER + "\"; " +
             "export TERMUX_PRO_DESKTOP_OWNER_HANDLE=\"" + desktopLaunchToken + "\"; " +
@@ -63,31 +75,11 @@ public final class DesktopSessionOrchestrator {
             "export XKB_CONFIG_ROOT=\"" + PREFIX + "/share/X11/xkb\"; " +
             "export TMPDIR=\"" + PREFIX + "/tmp\"; mkdir -p \"$TMPDIR/.X11-unix\"; rm -f \"$TMPDIR/.X11-unix/X1\"; " +
             "mkdir -p \"$HOME/Desktop\" \"$HOME/.config/autostart\"; " +
-            "printf '[Desktop Entry]\\nVersion=1.0\\nType=Application\\nName=File Manager\\nComment=Browse files and folders\\nExec=thunar\\nIcon=org.xfce.thunar\\nTerminal=false\\nStartupNotify=true\\nOnlyShowIn=XFCE;\\nCategories=XFCE;GTK;Settings;DesktopSettings;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;\\n' > \"" + PREFIX + "/share/applications/termux-pro-file-manager.desktop\"; " +
-            "chmod 644 \"" + PREFIX + "/share/applications/termux-pro-file-manager.desktop\"; " +
-            "rm -f \"$HOME/Desktop/thunar.desktop\" \"$HOME/Desktop/org.xfce.thunar.desktop\" \"$HOME/Desktop/Thunar.desktop\" \"$HOME/Desktop/org.xfce.Thunar.desktop\"; " +
-            "for _src in \"" + PREFIX + "/share/applications/\"*.desktop; do " +
-            "[ -f \"$_src\" ] || continue; grep -qiE '^NoDisplay=true|^Hidden=true' \"$_src\" && continue; " +
-            "_bn=$(basename \"$_src\" .desktop); _bnl=$(printf '%s' \"$_bn\" | tr '[:upper:]' '[:lower:]'); " +
-            "case \"$_bnl\" in thunar|org.xfce.thunar|*file-manager*) continue ;; esac; " +
-            "case \"$_bnl\" in " +
-            "*app-store*|xfce4-terminal|org.xfce.terminal|org.xfce.terminalemulator|" +
-            "*appfinder|*settings.manager|*settings-manager|*session-logout|*mousepad|*screenshooter|" +
-            "*taskmanager|*ristretto|xfce4-run|org.xfce.run) ;; *) continue ;; esac; " +
-            "cp -f \"$_src\" \"$HOME/Desktop/$_bn.desktop\"; chmod 755 \"$HOME/Desktop/$_bn.desktop\"; done; " +
-            "printf '[Desktop Entry]\\nType=Application\\nName=Power Manager Override\\nHidden=true\\n' > \"$HOME/.config/autostart/xfce4-power-manager.desktop\"; " +
-            "printf \"#\\\\x21/bin/bash\\nsleep 2\\ntrust_file() { [ -f \\\"\\$1\\\" ] || return; chmod +x \\\"\\$1\\\"; command -v gio >/dev/null && gio set -t string \\\"\\$1\\\" metadata::xfce-exe-checksum \\\"\\$(sha256sum \\\"\\$1\\\" | cut -d' ' -f1)\\\" 2>/dev/null; }; \" > \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
-            "printf \"for f in \\\"\\$HOME/Desktop\\\"/*.desktop; do trust_file \\\"\\$f\\\"; done; xfconf-query -c xsettings -p /Net/IconThemeName -s Papirus 2>/dev/null; xfdesktop --reload 2>/dev/null; \" >> \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
-            "chmod 755 \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
-            "\"$PREFIX/bin/termux-pro-desktop-trust-icons\" & " + // Arxa fonda işlə və ikonları canlandır!
-            "printf '[Desktop Entry]\\nType=Application\\nName=Desktop Trust\\nExec=" + PREFIX + "/bin/termux-pro-desktop-trust-icons\\nOnlyShowIn=XFCE;\\nNoDisplay=true\\n' > \"$HOME/.config/autostart/termux-pro-desktop-trust.desktop\"; " +
-            "xfconf-query -c xfce4-desktop -p /desktop-icons/style -n -t int -s 2 >/dev/null 2>&1; " +
-            "xfconf-query -c xsettings -p /Net/IconThemeName -n -t string -s \"Papirus\" >/dev/null 2>&1; " +
             "CLASSPATH=" + DesktopRendererLauncher.getHostApkPathForShell() + "; export CLASSPATH; " +
             "mkdir -p \"$HOME/.cache\"; echo $$ > \"$HOME/.cache/termux-pro-x11.pid\"; " +
             "echo \"Starting Termux-X11 bridge...\"; " +
             "/system/bin/app_process -Xnoimage-dex2oat / --nice-name=termux-x11 com.termux.x11.CmdEntryPoint :1 " +
-            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"export PATH=" + PREFIX + "/bin:/data/data/com.termux/files/usr/bin:\\$PATH; export XDG_DATA_DIRS=" + PREFIX + "/share:\\$XDG_DATA_DIRS; export DISPLAY=:1; export QT_QPA_PLATFORM=xcb; export QT_X11_NO_MITSHM=1; exec dbus-launch --exit-with-session startxfce4\"; " +
+            "--desktop-owner=\"" + desktopLaunchToken + "\" -xstartup \"" + xstartupInner + "\"; " +
             "x11_status=$?; " +
             "echo \"X11 bridge stopped with status $x11_status\"; " +
             "rm -f \"$HOME/.cache/termux-pro-x11.pid\"; " +
@@ -98,8 +90,13 @@ public final class DesktopSessionOrchestrator {
 
     @Nullable
     public static TermuxSession start(TermuxService service) {
+        return start(service, null, "startxfce4");
+    }
+
+    @Nullable
+    public static TermuxSession start(TermuxService service, String distro, String desktopEnvironment) {
         String desktopLaunchToken = "desktop-" + UUID.randomUUID();
-        String command = buildDesktopStartCommand(desktopLaunchToken);
+        String command = buildDesktopStartCommand(desktopLaunchToken, distro, desktopEnvironment);
 
         TermuxSession session = service.createTermuxSession(
             TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash",
