@@ -157,6 +157,7 @@
 
     <!-- Termux Settings -->
     <string name="title_activity_termux_settings">&TERMUX_APP_NAME; Settings</string>
+    <string name="title_activity_assistant">AI Meclisi</string>
 
     <!-- Termux App Preferences -->
     <string name="termux_preferences_title">&TERMUX_APP_NAME;</string>
@@ -254,5 +255,7 @@
 
     <!-- Donate Preference -->
     <string name="donate_preference_title">Donate</string>
+
+    <string name="distro_icon_desc">Distro Icon</string>
 
 </resources>

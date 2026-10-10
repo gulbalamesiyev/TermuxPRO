@@ -12,8 +12,9 @@
         android:layout_width="28dp"
         android:layout_height="28dp"
         android:layout_marginRight="12dp"
-        android:scaleType="fitCenter"
-        android:contentDescription="Distro Icon" />
+        android:contentDescription="@string/distro_icon_desc"
+        android:rotationX="0"
+        android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/text_distro_name"
