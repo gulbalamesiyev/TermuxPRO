@@ -198,6 +198,9 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "  echo \"[System Self-Heal] Repairing curl and libcurl via apt...\"\n");
         fprintf(fp, "  apt update && apt install -y curl libcurl 2>/dev/null || true\n");
         fprintf(fp, "fi\n");
+        // Self-heal C++ symbol / libhunspell / libc++ linkage issues
+        fprintf(fp, "echo \"[System Self-Heal] Checking and repairing library linkages (libhunspell, libc++)...\"\n");
+        fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y --reinstall libhunspell libc++ 2>/dev/null || true\n");
 
         // Override 'pkg' command to bypass curl dependency and route directly to apt
     fprintf(fp, "pkg() {\n");
