@@ -4,13 +4,11 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.termux.R;
@@ -51,7 +49,7 @@ public final class DistroSelectorDialog {
             R.drawable.ic_distro_void
         };
         
-        CustomDistroAdapter distroAdapter = new CustomDistroAdapter(context, distros, distroIcons);
+        DistroSpinnerAdapter distroAdapter = new DistroSpinnerAdapter(context, distros, distroIcons);
         distroSpinner.setAdapter(distroAdapter);
 
         String[] des = {
@@ -70,7 +68,7 @@ public final class DistroSelectorDialog {
             R.drawable.ic_de_i3
         };
         
-        CustomDistroAdapter deAdapter = new CustomDistroAdapter(context, des, deIcons);
+        DistroSpinnerAdapter deAdapter = new DistroSpinnerAdapter(context, des, deIcons);
         deSpinner.setAdapter(deAdapter);
 
         new MaterialAlertDialogBuilder(context)
@@ -88,36 +86,52 @@ public final class DistroSelectorDialog {
             .show();
     }
 
-    private static class CustomDistroAdapter extends ArrayAdapter<String> {
+    private static class DistroSpinnerAdapter extends BaseAdapter implements SpinnerAdapter {
         private final Context mContext;
         private final String[] mItems;
         private final int[] mIconResIds;
 
-        public CustomDistroAdapter(@NonNull Context context, String[] items, int[] iconResIds) {
-            super(context, 0, items);
+        public DistroSpinnerAdapter(Context context, String[] items, int[] iconResIds) {
             this.mContext = context;
             this.mItems = items;
             this.mIconResIds = iconResIds;
         }
 
-        @NonNull
         @Override
-        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-            return createCustomView(position, convertView, parent);
+        public int getCount() {
+            return mItems.length;
         }
 
         @Override
-        public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-            return createCustomView(position, convertView, parent);
+        public Object getItem(int position) {
+            return mItems[position];
         }
 
-        private View createCustomView(int position, View convertView, ViewGroup parent) {
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            return createView(position, convertView, parent);
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            return createView(position, convertView, parent);
+        }
+
+        private View createView(int position, View convertView, ViewGroup parent) {
             View view = convertView != null ? convertView : LayoutInflater.from(mContext).inflate(R.layout.item_distro_spinner, parent, false);
             ImageView iconView = view.findViewById(R.id.img_distro_icon);
             TextView nameView = view.findViewById(R.id.text_distro_name);
 
             if (position >= 0 && position < mIconResIds.length) {
                 iconView.setImageResource(mIconResIds[position]);
+                iconView.setVisibility(View.VISIBLE);
+            } else {
+                iconView.setVisibility(View.GONE);
             }
             nameView.setText(mItems[position]);
             return view;
