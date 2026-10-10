@@ -21,9 +21,9 @@
     <color name="muted_gray">#94A3B8</color>
     <color name="charcoal">#141B24</color>
     <color name="charcoal_outline">#1C2632</color>
-    <color name="terminal_green">#00E5FF</color> <!-- Using cyan for terminal green in Pro theme -->
+    <color name="terminal_green">#81C784</color>
     <color name="dark_green_fill">#1A242E</color>
-    <color name="bright_green_outline">#00E5FF</color>
+    <color name="bright_green_outline">#81C784</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 </resources>
