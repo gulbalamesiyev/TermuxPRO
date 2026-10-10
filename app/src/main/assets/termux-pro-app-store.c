@@ -54,57 +54,59 @@ void sanitize_filename(const char *src, char *dst, size_t max_len) {
     dst[i] = '\0';
 }
 
-int is_app_in_queue(AppEntry *app) {
-    char safe_name[128];
-    sanitize_filename(app->name, safe_name, sizeof(safe_name));
-    FILE *fq = fopen("/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt", "r");
-    if (!fq) return 0;
-    char line[512];
-    int found = 0;
-    while (fgets(line, sizeof(line), fq)) {
-        if (strstr(line, safe_name) != NULL) {
-            found = 1;
-            break;
-        }
+#define MAX_QUEUE_SIZE 64
+char install_queue[MAX_QUEUE_SIZE][512];
+char install_queue_names[MAX_QUEUE_SIZE][128];
+int queue_head = 0;
+int queue_tail = 0;
+int is_installing = 0;
+int delay_countdown = 0;
+
+int is_in_app_queue(const char *app_name) {
+    for (int i = queue_head; i < queue_tail; i++) {
+        if (strcmp(install_queue_names[i % MAX_QUEUE_SIZE], app_name) == 0) return 1;
     }
-    fclose(fq);
-    return found;
+    return 0;
 }
 
-void run_or_queue_task(const char *script_path, const char *app_name) {
-    system("mkdir -p /data/data/com.termux/files/usr/var/lib/termux-pro");
+int is_app_in_queue(AppEntry *app) {
+    return is_in_app_queue(app->name);
+}
 
-    FILE *fp = fopen(script_path, "a");
-    if (fp) {
-        fprintf(fp, "echo \"Task completed. Waiting 3 seconds before next queue item...\"\n");
-        fprintf(fp, "sleep 3\n");
-        fprintf(fp, "rm -f /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock\n");
-        fprintf(fp, "QUEUE_FILE=\"/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt\"\n");
-        fprintf(fp, "if [ -f \"$QUEUE_FILE\" ]; then\n");
-        fprintf(fp, "  next_task=$(head -n 1 \"$QUEUE_FILE\")\n");
-        fprintf(fp, "  sed -i '1d' \"$QUEUE_FILE\"\n");
-        fprintf(fp, "  if [ -n \"$next_task\" ] && [ -f \"$next_task\" ]; then\n");
-        fprintf(fp, "    touch /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock\n");
-        fprintf(fp, "    DISPLAY=:1 xfce4-terminal --title \"App Store Task\" -x bash \"$next_task\" &\n");
-        fprintf(fp, "  fi\n");
-        fprintf(fp, "fi\n");
-        fprintf(fp, "touch \"$HOME/.cache/termux-pro-install/.refresh_ui\"\n");
-        fclose(fp);
-    }
+void enqueue_and_run(const char *script_path, const char *app_name) {
+    if ((queue_tail + 1) % MAX_QUEUE_SIZE == queue_head) return;
+    strncpy(install_queue[queue_tail % MAX_QUEUE_SIZE], script_path, 511);
+    strncpy(install_queue_names[queue_tail % MAX_QUEUE_SIZE], app_name, 127);
+    queue_tail++;
+    refresh_ui(NULL);
+}
 
-    struct stat st;
-    if (stat("/data/data/com.termux/files/usr/var/lib/termux-pro/install.lock", &st) == 0) {
-        FILE *fq = fopen("/data/data/com.termux/files/usr/var/lib/termux-pro/install_queue.txt", "a");
-        if (fq) {
-            fprintf(fq, "%s\n", script_path);
-            fclose(fq);
+gboolean queue_tick(gpointer data) {
+    if (is_installing) {
+        int running = (system("pgrep -x xfce4-terminal >/dev/null 2>&1 || pgrep -x apt >/dev/null 2>&1") == 0);
+        if (!running) {
+            is_installing = 0;
+            delay_countdown = 3; // 3 seconds delay after finish
+            refresh_ui(NULL);
         }
-    } else {
-        system("touch /data/data/com.termux/files/usr/var/lib/termux-pro/install.lock");
+    } else if (delay_countdown > 0) {
+        delay_countdown--;
+    } else if (queue_head < queue_tail) {
+        char *task_path = install_queue[queue_head % MAX_QUEUE_SIZE];
+        queue_head++;
+        is_installing = 1;
         char cmd[1024];
-        snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal --title \"Task: %s\" -x bash \"%s\" &", app_name, script_path);
+        snprintf(cmd, sizeof(cmd), "DISPLAY=:1 xfce4-terminal --title \"App Store Task\" -x bash \"%s\" &", task_path);
         system(cmd);
+        refresh_ui(NULL);
     }
+
+    char path[256]; snprintf(path, sizeof(path), "%s/.cache/termux-pro-install/.refresh_ui", getenv("HOME"));
+    if (access(path, F_OK) == 0) {
+        unlink(path);
+        refresh_ui(NULL);
+    }
+    return TRUE;
 }
 
 int is_app_installed_robust(AppEntry *app) {
@@ -237,7 +239,7 @@ void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
         fclose(fp);
         chmod(script_path, 0755);
     }
-    run_or_queue_task(script_path, entry->name);
+    enqueue_and_run(script_path, entry->name);
     refresh_ui(NULL);
 }
 
@@ -453,7 +455,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         chmod(script_path, 0755);
     }
 
-    run_or_queue_task(script_path, entry->name);
+    enqueue_and_run(script_path, entry->name);
     refresh_ui(NULL);
 }
 
@@ -561,21 +563,6 @@ static void* load_catalog_thread(void* data) {
     return NULL;
 }
 
-gboolean check_refresh_trigger(gpointer data) {
-    char path[256]; snprintf(path, sizeof(path), "%s/.cache/termux-pro-install/.refresh_ui", getenv("HOME"));
-    if (access(path, F_OK) == 0) {
-        unlink(path);
-        refresh_ui(NULL);
-    }
-    // Avtomatik olaraq dövri olaraq da UI-ı təzələyir ki, heç bir manual refresh-ə ehtiyac qalmasın
-    static int tick = 0;
-    if (++tick >= 3) {
-        tick = 0;
-        refresh_ui(NULL);
-    }
-    return TRUE;
-}
-
 void on_manual_refresh_clicked(GtkWidget *widget, gpointer data) { refresh_ui(NULL); }
 
 int main(int argc, char *argv[]) {
@@ -598,7 +585,7 @@ int main(int argc, char *argv[]) {
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
         GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    g_timeout_add(1000, (GSourceFunc)check_refresh_trigger, NULL);
+    g_timeout_add(1000, (GSourceFunc)queue_tick, NULL);
 
     GtkSettings *settings = gtk_settings_get_default();
     g_object_set(settings, "gtk-icon-theme-name", "Papirus", NULL);
