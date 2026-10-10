@@ -40,8 +40,18 @@ public final class DistroSelectorDialog {
             "Void Linux (voidlinux)"
         };
         String[] distroValues = { "ubuntu", "debian", "archlinux", "fedora", "alpine", "opensuse", "pardus", "voidlinux" };
+        int[] distroIcons = {
+            R.drawable.ic_distro_ubuntu,
+            R.drawable.ic_distro_debian,
+            R.drawable.ic_distro_arch,
+            R.drawable.ic_distro_fedora,
+            R.drawable.ic_distro_alpine,
+            R.drawable.ic_distro_opensuse,
+            R.drawable.ic_distro_pardus,
+            R.drawable.ic_distro_void
+        };
         
-        CustomSpinnerAdapter distroAdapter = new CustomSpinnerAdapter(context, distros, R.drawable.ic_distro_linux);
+        CustomDistroAdapter distroAdapter = new CustomDistroAdapter(context, distros, distroIcons);
         distroSpinner.setAdapter(distroAdapter);
 
         String[] des = {
@@ -52,8 +62,15 @@ public final class DistroSelectorDialog {
             "i3 Window Manager"
         };
         String[] deValues = { "startxfce4", "mate-session", "startlxde", "lxqt-session", "i3" };
+        int[] deIcons = {
+            R.drawable.ic_de_xfce,
+            R.drawable.ic_de_mate,
+            R.drawable.ic_de_lxde,
+            R.drawable.ic_de_lxqt,
+            R.drawable.ic_de_i3
+        };
         
-        CustomSpinnerAdapter deAdapter = new CustomSpinnerAdapter(context, des, R.drawable.ic_desktop_env);
+        CustomDistroAdapter deAdapter = new CustomDistroAdapter(context, des, deIcons);
         deSpinner.setAdapter(deAdapter);
 
         new MaterialAlertDialogBuilder(context)
@@ -71,16 +88,16 @@ public final class DistroSelectorDialog {
             .show();
     }
 
-    private static class CustomSpinnerAdapter extends ArrayAdapter<String> {
+    private static class CustomDistroAdapter extends ArrayAdapter<String> {
         private final Context mContext;
         private final String[] mItems;
-        private final int mIconResId;
+        private final int[] mIconResIds;
 
-        public CustomSpinnerAdapter(@NonNull Context context, String[] items, int iconResId) {
+        public CustomDistroAdapter(@NonNull Context context, String[] items, int[] iconResIds) {
             super(context, R.layout.item_distro_spinner, items);
             this.mContext = context;
             this.mItems = items;
-            this.mIconResId = iconResId;
+            this.mIconResIds = iconResIds;
         }
 
         @NonNull
@@ -95,14 +112,13 @@ public final class DistroSelectorDialog {
         }
 
         private View createCustomView(int position, View convertView, ViewGroup parent) {
-            View view = convertView;
-            if (view == null) {
-                view = LayoutInflater.from(mContext).inflate(R.layout.item_distro_spinner, parent, false);
-            }
+            View view = convertView != null ? convertView : LayoutInflater.from(mContext).inflate(R.layout.item_distro_spinner, parent, false);
             ImageView iconView = view.findViewById(R.id.img_distro_icon);
             TextView nameView = view.findViewById(R.id.text_distro_name);
 
-            iconView.setImageResource(mIconResId);
+            if (position >= 0 && position < mIconResIds.length) {
+                iconView.setImageResource(mIconResIds[position]);
+            }
             nameView.setText(mItems[position]);
             return view;
         }
