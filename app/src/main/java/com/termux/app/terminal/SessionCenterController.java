@@ -100,11 +100,8 @@ public final class SessionCenterController {
                             mActivity.getTermuxService().removeTermuxSession(existing.getTerminalSession());
                         }
                     }
-                    if (DesktopSessionOrchestrator.areResourcesInstalled()) {
-                        DesktopSessionOrchestrator.start(mActivity.getTermuxService(), distro, de);
-                        mActivity.startDesktopBootProgress();
-                        setVisible(true, false);
-                    } else {
+
+                    if (!DesktopSessionOrchestrator.areResourcesInstalled()) {
                         TermuxService service = mActivity.getTermuxService();
                         if (service != null) {
                             TermuxSession resSession = service.createTermuxSession(
@@ -119,7 +116,40 @@ public final class SessionCenterController {
                                 showDownloadResourcesDialog(resSession);
                             }
                         }
+                        return;
                     }
+
+                    if (distro != null && !distro.isEmpty()) {
+                        File distroRoot = new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/var/lib/proot-distro/installed-rootfs/" + distro);
+                        if (!distroRoot.exists()) {
+                            new MaterialAlertDialogBuilder(mActivity)
+                                    .setTitle("Download Distro (" + distro + ")")
+                                    .setMessage("The selected Linux distribution (" + distro + ") is not installed. Do you want to download and install it now? (Logs will be shown in CLI log box)")
+                                    .setPositiveButton("Yes", (dialog, which) -> {
+                                        TermuxService service = mActivity.getTermuxService();
+                                        if (service != null) {
+                                            TermuxSession distroSession = service.createTermuxSession(
+                                                TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash",
+                                                new String[] { "-lc", "pkg install -y proot-distro && proot-distro install " + distro + " && echo 'TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED'" },
+                                                null,
+                                                TermuxConstants.TERMUX_HOME_DIR_PATH,
+                                                false,
+                                                "Distro Installer: " + distro
+                                            );
+                                            if (distroSession != null) {
+                                                triggerResourceDownload(distroSession);
+                                            }
+                                        }
+                                    })
+                                    .setNegativeButton("No", null)
+                                    .show();
+                            return;
+                        }
+                    }
+
+                    DesktopSessionOrchestrator.start(mActivity.getTermuxService(), distro, de);
+                    mActivity.startDesktopBootProgress();
+                    setVisible(true, false);
                 });
             });
         }
@@ -380,6 +410,14 @@ public final class SessionCenterController {
         }
 
         public void bind(TermuxSession session) {
+            if (mCurrentTab == 0) {
+                desktopButton.setVisibility(View.GONE);
+                cliButton.setVisibility(View.VISIBLE);
+            } else {
+                cliButton.setVisibility(View.GONE);
+                desktopButton.setVisibility(View.VISIBLE);
+            }
+
             TerminalSession terminal = session.getTerminalSession();
             String name = terminal.mSessionName;
             if (name == null || name.isEmpty()) {
