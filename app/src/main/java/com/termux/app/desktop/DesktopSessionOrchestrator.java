@@ -68,13 +68,8 @@ public final class DesktopSessionOrchestrator {
             "rm -f \"$HOME/Desktop/thunar.desktop\" \"$HOME/Desktop/org.xfce.thunar.desktop\" \"$HOME/Desktop/Thunar.desktop\" \"$HOME/Desktop/org.xfce.Thunar.desktop\"; " +
             "for _src in \"" + PREFIX + "/share/applications/\"*.desktop; do " +
             "[ -f \"$_src\" ] || continue; grep -qiE '^NoDisplay=true|^Hidden=true' \"$_src\" && continue; " +
-            "_bn=$(basename \"$_src\" .desktop); _bnl=$(printf '%s' \"$_bn\" | tr '[:upper:]' '[:lower:]'); " +
-            "case \"$_bnl\" in thunar|org.xfce.thunar|*file-manager*) continue ;; esac; " +
-            "case \"$_bnl\" in " +
-            "*app-store*|xfce4-terminal|org.xfce.terminal|org.xfce.terminalemulator|" +
-            "*appfinder|*settings.manager|*settings-manager|*session-logout|*mousepad|*screenshooter|" +
-            "*taskmanager|*ristretto|xfce4-run|org.xfce.run) ;; *) continue ;; esac; " +
-            "cp -f \"$_src\" \"$HOME/Desktop/$_bn.desktop\"; chmod 755 \"$HOME/Desktop/$_bn.desktop\"; done; " +
+            "_bn=$(basename \"$_src\"); " +
+            "cp -f \"$_src\" \"$HOME/Desktop/$_bn\"; chmod 755 \"$HOME/Desktop/$_bn\"; done; " +
             "printf '[Desktop Entry]\\nType=Application\\nName=Power Manager Override\\nHidden=true\\n' > \"$HOME/.config/autostart/xfce4-power-manager.desktop\"; " +
             "printf \"#\\\\x21/bin/bash\\nsleep 2\\ntrust_file() { [ -f \\\"\\$1\\\" ] || return; chmod +x \\\"\\$1\\\"; command -v gio >/dev/null && gio set -t string \\\"\\$1\\\" metadata::xfce-exe-checksum \\\"\\$(sha256sum \\\"\\$1\\\" | cut -d' ' -f1)\\\" 2>/dev/null; }; \" > \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
             "printf \"for f in \\\"\\$HOME/Desktop\\\"/*.desktop; do trust_file \\\"\\$f\\\"; done; xfconf-query -c xsettings -p /Net/IconThemeName -s Papirus 2>/dev/null; xfdesktop --reload 2>/dev/null; \" >> \"" + PREFIX + "/bin/termux-pro-desktop-trust-icons\"; " +
