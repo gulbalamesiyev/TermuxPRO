@@ -94,7 +94,7 @@ public final class DistroSelectorDialog {
         private final int[] mIconResIds;
 
         public CustomDistroAdapter(@NonNull Context context, String[] items, int[] iconResIds) {
-            super(context, R.layout.item_distro_spinner, items);
+            super(context, 0, items);
             this.mContext = context;
             this.mItems = items;
             this.mIconResIds = iconResIds;

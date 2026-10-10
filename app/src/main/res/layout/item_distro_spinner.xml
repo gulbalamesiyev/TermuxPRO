@@ -12,12 +12,14 @@
         android:layout_width="28dp"
         android:layout_height="28dp"
         android:layout_marginRight="12dp"
-        android:scaleType="fitCenter" />
+        android:scaleType="fitCenter"
+        android:contentDescription="Distro Icon" />
 
     <TextView
         android:id="@+id/text_distro_name"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:textColor="@color/pro_text_primary"
         android:textSize="16sp"
         android:singleLine="true" />
