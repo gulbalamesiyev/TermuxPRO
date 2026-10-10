@@ -160,15 +160,7 @@ public final class SessionCenterController {
             @Override
             public void onDownloadCompleted() {
                 DesktopResourceManager.provisionAppStoreResourcesWithContext(mActivity);
-                
-                if (DesktopSessionOrchestrator.promoteAndStartInExistingSession(session)) {
-                    mActivity.startDesktopBootProgress();
-                } else if (!session.getTerminalSession().isRunning()) {
-                    // If not running, restart it
-                    mActivity.getTermuxService().removeTermuxSession(session.getTerminalSession());
-                    DesktopSessionOrchestrator.start(mActivity.getTermuxService());
-                    mActivity.startDesktopBootProgress();
-                }
+                mActivity.termuxSessionListNotifyUpdated();
             }
 
             @Override

@@ -287,6 +287,9 @@ public final class DesktopResourceManager {
             + "  chmod 755 \"$HOME/Desktop/$_bn.desktop\"\n"
             + "done\n"
             + "sync || true\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Running final system update & upgrade...\"\n"
+            + "apt-get update -y || true\n"
+            + "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" || true\n"
             + "say \"TERMUX_PRO_DESKTOP_PHASE:FINALIZING\"\n"
             + "say \"TERMUX_PRO_DESKTOP_PROGRESS:100\"\n"
             + "say \"TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED\"\n";
