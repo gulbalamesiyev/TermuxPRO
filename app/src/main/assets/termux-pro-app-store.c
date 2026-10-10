@@ -228,8 +228,8 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
     fprintf(fp, "export -f pkg 2>/dev/null || true\n");
 
     // Ensure repos are enabled and updated
-    fprintf(fp, "pkg install -y x11-repo tur-repo glibc-repo > /dev/null 2>&1\n");
-    fprintf(fp, "apt-get update -y > /dev/null 2>&1\n");
+    fprintf(fp, "pkg install -y x11-repo tur-repo glibc-repo || true\n");
+    fprintf(fp, "apt-get update -y || true\n");
 
     // Execute the package command (Real Upgrade / Full-Upgrade for system runtimes to ensure latest version)
     if (strcmp(entry->name, "Burp Suite") == 0) {
@@ -240,8 +240,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
     } else if (strstr(entry->pkg, "openjdk") || strcmp(entry->name, "Python 3") == 0 || strcmp(entry->name, "Node.js") == 0 || strstr(entry->pkg, "python") || strstr(entry->pkg, "nodejs")) {
         fprintf(fp, "echo \"Performing real latest version upgrade/install...\"\n");
         if (strcmp(entry->name, "Java 21 (OpenJDK)") == 0) {
-            fprintf(fp, "JDK_PKG=$(pkg search openjdk | grep -oE 'openjdk-[0-9]+' | sort -V | tail -n 1)\n");
-            fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade ${JDK_PKG:-openjdk-21} 2>/dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y ${JDK_PKG:-openjdk-21}\n");
+            fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-21 || DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17 || DEBIAN_FRONTEND=noninteractive apt-get install -y default-jdk\n");
         } else {
             fprintf(fp, "DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade \"%s\" 2>/dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y \"%s\"\n", entry->pkg, entry->pkg);
         }
@@ -259,6 +258,17 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
     // Shortcut creation logic (Skip shortcuts for pure core system runtimes like Java, Python, Git, Node.js)
     fprintf(fp, "if [ $RET -eq 0 ]; then\n");
     fprintf(fp, "  echo \"installing was successfully\"\n");
+    fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk\" || echo \"%s\" | grep -qiE \"^Java\"; then\n", entry->pkg, entry->name);
+    fprintf(fp, "    echo \"Linking Java binaries to $PREFIX/bin...\"\n");
+    fprintf(fp, "    JAVA_BIN=$(find \"$PREFIX/opt\" \"$PREFIX/lib\" -name \"java\" -type f 2>/dev/null | head -n 1)\n");
+    fprintf(fp, "    if [ -n \"$JAVA_BIN\" ]; then\n");
+    fprintf(fp, "      JDK_BIN_DIR=$(dirname \"$JAVA_BIN\")\n");
+    fprintf(fp, "      for bin in \"$JDK_BIN_DIR\"/*; do\n");
+    fprintf(fp, "        [ -f \"$bin\" ] && ln -sf \"$bin\" \"$PREFIX/bin/$(basename \"$bin\")\" 2>/dev/null || true\n");
+    fprintf(fp, "      done\n");
+    fprintf(fp, "      echo \"Java binaries linked successfully.\"\n");
+    fprintf(fp, "    fi\n");
+    fprintf(fp, "  fi\n");
     fprintf(fp, "  if echo \"%s\" | grep -qiE \"openjdk|python|git|nodejs\" || echo \"%s\" | grep -qiE \"^Java|^Python|^Git|^Node\"; then\n", entry->pkg, entry->name);
     fprintf(fp, "    echo \"Core system runtime installed successfully. Skipping Desktop shortcut creation.\"\n");
     fprintf(fp, "  else\n");
