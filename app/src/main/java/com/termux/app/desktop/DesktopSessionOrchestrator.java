@@ -237,29 +237,35 @@ public final class DesktopSessionOrchestrator {
     }
 
     public static boolean isDesktopSession(@Nullable TermuxSession session) {
-        if (session == null || session.getExecutionCommand() == null)
+        if (session == null || session.getTerminalSession() == null)
+            return false;
+
+        // 1. Check if desktop owner in DesktopNavigationState
+        String handle = session.getTerminalSession().mHandle;
+        if (handle != null && DesktopNavigationState.isDesktopOwner(handle)) {
+            return true;
+        }
+
+        // 2. Check session title/name
+        String name = session.getTerminalSession().mSessionName;
+        if (name != null && (name.contains("Desktop") || name.contains("Resource"))) {
+            return true;
+        }
+
+        if (session.getExecutionCommand() == null)
             return false;
 
         String[] arguments = session.getExecutionCommand().arguments;
         if (arguments == null) return false;
 
-        // 1. Modern Marker Check
-        for (String arg : arguments) {
-            if (arg != null && arg.contains(DESKTOP_MARKER)) return true;
-        }
-
-        // 2. Legacy Fallback Check
-        boolean hasEntryPoint = false;
-        boolean hasNiceName = false;
-        boolean hasXfce = false;
-
+        // 3. Command arguments check
         for (String arg : arguments) {
             if (arg == null) continue;
-            if (arg.contains("com.termux.x11.CmdEntryPoint")) hasEntryPoint = true;
-            if (arg.contains("--nice-name=termux-x11")) hasNiceName = true;
-            if (arg.contains("xfce4-session")) hasXfce = true;
+            if (arg.contains("com.termux.x11.CmdEntryPoint") || arg.contains(DESKTOP_MARKER) || arg.contains("proot-distro") || arg.contains("termux-x11")) {
+                return true;
+            }
         }
 
-        return hasEntryPoint && hasNiceName && hasXfce;
+        return false;
     }
 }
