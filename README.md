@@ -13,7 +13,7 @@
 ## 📥 Downloads
 
 **Latest Stable Release:**
-- [**🚀 Download Termux Pro Universal APK**](https://github.com/gulbalamesiyev/TermuxPRO/releases/download/v1.0.6/termux-pro-universal.apk) (~125MB)
+- [**🚀 Download Termux Pro Universal APK**]([https://github.com/gulbalamesiyev/TermuxPRO/releases/tag/v1.0.8]) (~130MB)
   *Includes support for arm64-v8a, armeabi-v7a, x86, and x86_64.*
 
 You can also find the APK in the [**release/**](release/) folder of this repository or on the [**Releases**](https://github.com/gulbalamesiyev/TermuxPRO/releases) page.
