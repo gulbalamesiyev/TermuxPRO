@@ -53,6 +53,17 @@
 
         <!-- Custom Styles -->
         <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Filled</item>
+        <item name="alertDialogTheme">@style/Theme.TermuxPro.Dialog</item>
+    </style>
+
+    <!-- SD Maid SE / Material 3 Dark Custom Dialog Theme -->
+    <style name="Theme.TermuxPro.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">@color/pro_bg_card</item>
+        <item name="colorSurface">@color/pro_bg_card</item>
+        <item name="colorOnSurface">@color/pro_text_primary</item>
+        <item name="colorPrimary">@color/pro_cyan</item>
+        <item name="android:textColorPrimary">@color/pro_text_primary</item>
+        <item name="android:textColorSecondary">@color/pro_text_secondary</item>
     </style>
 
 </resources>
