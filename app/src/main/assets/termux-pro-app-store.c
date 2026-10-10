@@ -320,7 +320,7 @@ void on_action_clicked(GtkWidget *widget, gpointer data) {
         fprintf(fp, "    done\n");
         fprintf(fp, "    sync; xfdesktop --reload 2>/dev/null\n");
         fprintf(fp, "  fi\n");
-        fprintf(fp, "  FILE=\"$PREFIX/share/applications/%s.desktop\"\n");
+        fprintf(fp, "  FILE=\"$PREFIX/share/applications/%s.desktop\"\n", entry->name);
         fprintf(fp, "  rm -f \"$FILE\"\n");
         fprintf(fp, "  EXTRA_FLAGS=\"\"\n");
         fprintf(fp, "  [[ \"$EXEC_BASE\" == *\"chromium\"* || \"$EXEC_BASE\" == *\"code-oss\"* ]] && EXTRA_FLAGS=\"--no-sandbox\"\n");
