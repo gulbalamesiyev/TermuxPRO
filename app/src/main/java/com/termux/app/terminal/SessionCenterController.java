@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
@@ -131,7 +132,7 @@ public final class SessionCenterController {
     }
 
     private void showDownloadResourcesDialog(TermuxSession session) {
-        new AlertDialog.Builder(mActivity)
+        new MaterialAlertDialogBuilder(mActivity)
                 .setTitle("Desktop Resources")
                 .setMessage("Do you want to install desktop resources nearly 1.5 GB?")
                 .setPositiveButton("Yes", (dialog, which) -> triggerResourceDownload(session))
@@ -183,7 +184,7 @@ public final class SessionCenterController {
         boolean isRunning = terminal.isRunning();
 
         String[] options = {"Rename", "Delete session"};
-        new AlertDialog.Builder(mActivity)
+        new MaterialAlertDialogBuilder(mActivity)
                 .setTitle(isDesktop ? DesktopSessionOrchestrator.SESSION_NAME : terminal.mSessionName)
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
@@ -207,7 +208,7 @@ public final class SessionCenterController {
             message = "This removes the exited session from the list.";
         }
 
-        new AlertDialog.Builder(mActivity)
+        new MaterialAlertDialogBuilder(mActivity)
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
