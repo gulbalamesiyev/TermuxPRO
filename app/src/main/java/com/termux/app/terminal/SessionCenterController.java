@@ -8,6 +8,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -124,20 +125,20 @@ public final class SessionCenterController {
                         if (!distroRoot.exists()) {
                             new MaterialAlertDialogBuilder(mActivity)
                                     .setTitle("Download Distro (" + distro + ")")
-                                    .setMessage("The selected Linux distribution (" + distro + ") is not installed. Do you want to download and install it now? (Logs will be shown in CLI log box)")
+                                    .setMessage("The selected Linux distribution (" + distro + ") is not installed. Do you want to download and install it now?")
                                     .setPositiveButton("Yes", (dialog, which) -> {
                                         TermuxService service = mActivity.getTermuxService();
                                         if (service != null) {
                                             TermuxSession distroSession = service.createTermuxSession(
                                                 TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/bash",
-                                                new String[] { "-lc", "pkg install -y proot-distro && proot-distro install " + distro + " && echo 'TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED'" },
+                                                new String[] { "-l" },
                                                 null,
                                                 TermuxConstants.TERMUX_HOME_DIR_PATH,
                                                 false,
-                                                "Distro Installer: " + distro
+                                                distro + " Installer"
                                             );
                                             if (distroSession != null) {
-                                                triggerResourceDownload(distroSession);
+                                                triggerDistroDownload(distroSession, distro);
                                             }
                                         }
                                     })
@@ -249,10 +250,38 @@ public final class SessionCenterController {
     private void showDownloadResourcesDialog(TermuxSession session) {
         new MaterialAlertDialogBuilder(mActivity)
                 .setTitle("Desktop Resources")
-                .setMessage("Do you want to install desktop resources nearly 1.5 GB?")
+                .setMessage("Do you want to install desktop resources?")
                 .setPositiveButton("Yes", (dialog, which) -> triggerResourceDownload(session))
                 .setNegativeButton("No", null)
                 .show();
+    }
+
+    private void triggerDistroDownload(TermuxSession session, String distro) {
+        mLastDownloadError = null;
+        DesktopNavigationState.claimDesktopOwner(session.getTerminalSession().mHandle);
+        setVisible(true);
+        DesktopResourceManager.installDistro(session, distro, new DesktopResourceManager.ResourceDownloadCallback() {
+            @Override
+            public void onDownloadStarted() {
+                mActivity.termuxSessionListNotifyUpdated();
+            }
+
+            @Override
+            public void onDownloadFailed(String reason) {
+                mLastDownloadError = reason;
+                mActivity.termuxSessionListNotifyUpdated();
+            }
+
+            @Override
+            public void onDownloadCompleted() {
+                mActivity.termuxSessionListNotifyUpdated();
+            }
+
+            @Override
+            public void onProgressUpdated() {
+                mActivity.termuxSessionListNotifyUpdated();
+            }
+        });
     }
 
     private void triggerResourceDownload(TermuxSession session) {
@@ -420,16 +449,78 @@ public final class SessionCenterController {
 
             TerminalSession terminal = session.getTerminalSession();
             String name = terminal.mSessionName;
-            if (name == null || name.isEmpty()) {
-                name = "Session " + (getAdapterPosition() + 1);
+
+            boolean isDesktopOwner = DesktopSessionOrchestrator.isDesktopOwner(session);
+            boolean isDesktopSession = isDesktopOwner || DesktopSessionOrchestrator.isDesktopSession(session);
+
+            ImageView distroIconView = itemView.findViewById(R.id.session_card_distro_icon);
+            TextView promptView = itemView.findViewById(R.id.session_card_prompt);
+
+            String sessionCommandStr = "";
+            if (session.getExecutionCommand() != null && session.getExecutionCommand().arguments != null) {
+                for (String arg : session.getExecutionCommand().arguments) {
+                    if (arg != null) sessionCommandStr += arg + " ";
+                }
             }
-            nameView.setText(name);
+
+            int iconRes = R.drawable.ic_distro_linux;
+            String distroDisplayName = "Termux Desktop";
+            if (sessionCommandStr.contains("ubuntu") || (name != null && name.toLowerCase().contains("ubuntu"))) {
+                iconRes = R.drawable.ic_distro_ubuntu;
+                distroDisplayName = "Ubuntu";
+            } else if (sessionCommandStr.contains("debian") || (name != null && name.toLowerCase().contains("debian"))) {
+                iconRes = R.drawable.ic_distro_debian;
+                distroDisplayName = "Debian";
+            } else if (sessionCommandStr.contains("archlinux") || (name != null && name.toLowerCase().contains("arch"))) {
+                iconRes = R.drawable.ic_distro_arch;
+                distroDisplayName = "Arch Linux";
+            } else if (sessionCommandStr.contains("fedora") || (name != null && name.toLowerCase().contains("fedora"))) {
+                iconRes = R.drawable.ic_distro_fedora;
+                distroDisplayName = "Fedora";
+            } else if (sessionCommandStr.contains("alpine") || (name != null && name.toLowerCase().contains("alpine"))) {
+                iconRes = R.drawable.ic_distro_alpine;
+                distroDisplayName = "Alpine Linux";
+            } else if (sessionCommandStr.contains("opensuse") || (name != null && name.toLowerCase().contains("opensuse"))) {
+                iconRes = R.drawable.ic_distro_opensuse;
+                distroDisplayName = "OpenSUSE";
+            } else if (sessionCommandStr.contains("pardus") || (name != null && name.toLowerCase().contains("pardus"))) {
+                iconRes = R.drawable.ic_distro_pardus;
+                distroDisplayName = "Pardus";
+            } else if (sessionCommandStr.contains("voidlinux") || (name != null && name.toLowerCase().contains("void"))) {
+                iconRes = R.drawable.ic_distro_void;
+                distroDisplayName = "Void Linux";
+            }
+
+            String deDisplayName = "XFCE";
+            if (sessionCommandStr.contains("mate")) {
+                deDisplayName = "MATE";
+            } else if (sessionCommandStr.contains("lxde")) {
+                deDisplayName = "LXDE";
+            } else if (sessionCommandStr.contains("lxqt")) {
+                deDisplayName = "LXQt";
+            } else if (sessionCommandStr.contains("i3")) {
+                deDisplayName = "i3";
+            }
+
+            if (isDesktopSession) {
+                nameView.setText(distroDisplayName + " (" + deDisplayName + ")");
+                if (distroIconView != null) {
+                    distroIconView.setImageResource(iconRes);
+                    distroIconView.setVisibility(View.VISIBLE);
+                }
+                if (promptView != null) promptView.setVisibility(View.GONE);
+            } else {
+                if (distroIconView != null) distroIconView.setVisibility(View.GONE);
+                if (promptView != null) promptView.setVisibility(View.VISIBLE);
+                if (name == null || name.isEmpty()) {
+                    name = "Session " + (getAdapterPosition() + 1);
+                }
+                nameView.setText(name);
+            }
 
             boolean isRunning = terminal.isRunning();
             statusView.setText(isRunning ? "RUNNING" : "EXITED");
             statusView.setTextColor(isRunning ? mActivity.getResources().getColor(R.color.terminal_green) : Color.GRAY);
-
-            boolean isDesktopOwner = DesktopSessionOrchestrator.isDesktopOwner(session);
 
             cliButton.setOnClickListener(v -> {
                 setVisible(false);

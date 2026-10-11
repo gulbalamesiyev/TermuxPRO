@@ -171,6 +171,81 @@ public final class DesktopResourceManager {
         }, 1500);
     }
 
+    public static void installDistro(TermuxSession session, String distro, ResourceDownloadCallback callback) {
+        if (session == null || session.getTerminalSession() == null) {
+            if (callback != null) callback.onDownloadFailed("Invalid session.");
+            return;
+        }
+
+        TerminalSession terminal = session.getTerminalSession();
+        sCallback = callback;
+        String handle = UUID.randomUUID().toString().substring(0, 8);
+
+        DesktopNavigationState.setActiveInstallSessionHandle(terminal.mHandle);
+        DesktopNavigationState.setActiveInstallLogHandle(handle);
+        DesktopNavigationState.startDesktopDownload();
+        DesktopNavigationState.setInstallPhase("DOWNLOADING");
+        DesktopNavigationState.setInstallProgress(-1);
+        DesktopNavigationState.clearInstallLogs();
+        DesktopNavigationState.addInstallLog("Starting distro installation for " + distro + "...");
+
+        sLogFileOffset = 0;
+        sPendingOutput = "";
+
+        if (callback != null) {
+            sHandler.post(callback::onDownloadStarted);
+            sHandler.post(sProgressTicker);
+        }
+
+        String prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
+        String logFile = getLogFilePath(handle);
+        String logDirectory = TermuxConstants.TERMUX_VAR_PREFIX_DIR_PATH + "/log";
+        String scriptPath = prefix + "/tmp/termux-pro-distro-install-" + handle + ".sh";
+
+        String distroScript = ""
+            + "export PREFIX=" + shellQuote(prefix) + "\n"
+            + "export PATH=\"$PREFIX/bin:$PATH\"\n"
+            + "export DEBIAN_FRONTEND=noninteractive\n"
+            + "export TERM=xterm-256color\n"
+            + "mkdir -p " + shellQuote(logDirectory) + " \"$PREFIX/tmp\"\n"
+            + "LOG_FILE=" + shellQuote(logFile) + "\n"
+            + "touch \"$LOG_FILE\"\n"
+            + "exec > >(tee -a \"$LOG_FILE\") 2>&1\n"
+            + "set +e\n"
+            + "say() { printf '%s\\n' \"$1\"; }\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Installing proot-distro...\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:UPDATING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:10\"\n"
+            + "pkg install -y proot-distro\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Downloading distro " + distro + "...\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:DOWNLOADING\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:40\"\n"
+            + "proot-distro install " + distro + "\n"
+            + "say \"TERMUX_PRO_DESKTOP_PROGRESS:100\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_LOG:Distro " + distro + " installed successfully!\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_PHASE:COMPLETED\"\n"
+            + "say \"TERMUX_PRO_DESKTOP_INSTALL_SUCCEEDED\"\n";
+
+        try {
+            new File(logDirectory).mkdirs();
+            new File(prefix + "/tmp").mkdirs();
+            Files.write(Paths.get(scriptPath), distroScript.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Failed to write distro install script", e);
+            failInstall("Could not write distro install script.");
+            return;
+        }
+
+        sHandler.postDelayed(() -> {
+            if (terminal.mHandle.equals(DesktopNavigationState.getActiveInstallSessionHandle())
+                    && handle.equals(DesktopNavigationState.getActiveInstallLogHandle())) {
+                terminal.write("bash " + shellQuote(scriptPath) + "\n");
+                sHandler.removeCallbacks(sFallbackRunnable);
+                sHandler.postDelayed(sFallbackRunnable, FALLBACK_TIMEOUT_MS);
+            }
+        }, 1000);
+    }
+
     /**
      * Same package set as before; installs one package at a time with retries so a
      * single failure cannot abort the rest of the desktop resources.

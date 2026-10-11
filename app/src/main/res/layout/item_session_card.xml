@@ -21,31 +21,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- Terminal Tile -->
-            <View
-                android:id="@+id/session_card_tile"
+            <!-- Terminal / Distro Logo Tile -->
+            <FrameLayout
+                android:id="@+id/session_card_tile_container"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:background="@color/near_black" />
+                android:background="@color/near_black">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@id/session_card_tile"
-                android:layout_alignTop="@id/session_card_tile"
-                android:layout_alignRight="@id/session_card_tile"
-                android:layout_alignBottom="@id/session_card_tile"
-                android:gravity="center"
-                android:text="@string/session_prompt"
-                android:textColor="@color/terminal_green"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                <ImageView
+                    android:id="@+id/session_card_distro_icon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/distro_icon_desc" />
+
+                <TextView
+                    android:id="@+id/session_card_prompt"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="@string/session_prompt"
+                    android:textColor="@color/terminal_green"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+            </FrameLayout>
 
             <!-- Session Info -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/session_card_tile"
+                android:layout_toRightOf="@id/session_card_tile_container"
                 android:layout_marginLeft="16dp"
                 android:orientation="vertical">
 
